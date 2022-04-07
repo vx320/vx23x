@@ -1,0 +1,2469 @@
+
+local function modadd(msg)
+    -- superuser and admins only (because sudo are always has privilege)
+    if not is_sudo(msg) then
+return '??? ÃäÜÊ áÜÓÜÊ ÇáÜãÜØÜæÑ  ??'
+end
+    local data = load_data(_config.moderation.data)
+  if data[tostring(msg.to.id)] then
+  return '??? ÇáãÌãæÚå  \n ??? *['..msg.to.title..']*\n ???  ÈÇáÊÃßíÏ Êã ÊİÚíáåÇ ?????'
+end
+local status = getChatAdministrators(msg.to.id).result
+for k,v in pairs(status) do
+if v.status == "creator" then
+if v.user.username then
+creator_id = v.user.id
+user_name = '@'..check_markdown(v.user.username)
+else
+user_name = check_markdown(v.user.first_name)
+end
+end
+end
+-- create data array in moderation.json
+data[tostring(msg.to.id)] = {
+owners = {[tostring(creator_id)] = user_name},
+mods ={},
+banned ={},
+is_silent_users ={},
+filterlist ={},
+replay ={},
+whitelist ={},
+
+settings = {
+set_name = msg.to.title,
+lock_link = 'yes',
+lock_tag = 'no',
+lock_spam = 'yes',
+lock_edit = 'no',
+lock_webpage = 'yes',
+lock_markdown = 'yes',
+flood = 'yes',
+lock_bots = 'yes',
+lock_pin = 'no',
+lock_woring = 'no',
+replay = 'yes',
+welcome = 'no',
+lock_join = 'no',
+lock_bots_inkick = 'no',
+lock_id = 'no',
+num_msg_max = '5',
+},
+   mutes = {
+mute_forward = 'yes',
+mute_audio = 'no',
+mute_video = 'no',
+mute_contact = 'yes',
+mute_text = 'no',
+mute_photo = 'no',
+mute_gif = 'no',
+mute_location = 'no',
+mute_document = 'yes',
+mute_sticker = 'no',
+mute_voice = 'no',
+mute_tgservice = 'no',
+mute_inline = 'yes'
+}
+}
+  save_data(_config.moderation.data, data)
+      local groups = 'groups'
+      if not data[tostring(groups)] then
+        data[tostring(groups)] = {}
+        save_data(_config.moderation.data, data)
+      end
+      data[tostring(groups)][tostring(msg.to.id)] = msg.to.id
+      save_data(_config.moderation.data, data)
+if tonumber(msg.from.id) ~= tonumber(sudo_id) then
+send_msg(sudo_id, '??? ÊÜã ÊÜİÜÚÜíÜá ÇáÜãÜÌÜãÜæÚÜå ?????\n??? '..msg.to.title..'?\n??? ÇíÏí ÇáãÌãæÚå : '..msg.to.id..'\n??? ÈæÇÓØå : '..msg.from.first_name)
+end
+send_msg(msg.to.id, '??? ÇáãÌãæÚå \n ??? *['..msg.to.title..']\n ??? Êã  ÊİÚíáåÇ ÈäÌÇÍ ?????*', msg.id,'md')
+end
+local function modrem(msg)
+    -- superuser and admins only (because sudo are always has privilege)
+      if not is_sudo(msg) then
+return '??? ÃäÜÊ áÜÓÜÊ ÇáÜãÜØÜæÑ  ??'
+   end
+    local data = load_data(_config.moderation.data)
+    local receiver = msg.to.id
+  if not data[tostring(msg.to.id)] then
+return '??? ÇáãÌãæÚå \n ???* ['..msg.to.title..']*\n ??? ÈÇáÊÃßíÏ Êã ÊÚØíáåÇ ?????\n'
+end
+
+  data[tostring(msg.to.id)] = nil
+  save_data(_config.moderation.data, data)
+     local groups = 'groups'
+      if not data[tostring(groups)] then
+        data[tostring(groups)] = nil
+        save_data(_config.moderation.data, data)
+      end data[tostring(groups)][tostring(msg.to.id)] = nil
+      save_data(_config.moderation.data, data)
+return '??? ÇáãÌãæÚå \n ???* ['..msg.to.title..']*\n ??? Êã ÊÚØíáåÇ ?????'
+end
+
+local function modlist(msg)
+    local data = load_data(_config.moderation.data)
+    local i = 1
+  if not data[tostring(msg.to.id)] then
+    return  "??? åĞå ÇáãÌãæÚå áíÓÊ ãä ÍãÇíÊí ??"
+ end
+  -- determine if table is empty
+  if next(data[tostring(msg.to.id)]['mods']) == nil then --fix way
+return  "??? áÇ íæÌÏ ÇÏãä İí åĞå ÇáãÌãæÚå ??"
+end
+   message = '??? *ŞÜÇÆÜãÜå ÇáÇÏãÜäÜíÜå :*\n'
+  for k,v in pairs(data[tostring(msg.to.id)]['mods'])
+do
+    message = message ..i.. '- '..v..' [' ..k.. '] \n'
+   i = i + 1
+end
+  return message
+end
+
+local function ownerlist(msg)
+    local data = load_data(_config.moderation.data)
+    local i = 1
+  if not data[tostring(msg.to.id)] then
+    return  "??? åĞå ÇáãÌãæÚå áíÓÊ ãä ÍãÇíÊí ??_"
+end
+  -- determine if table is empty
+  if next(data[tostring(msg.to.id)]['owners']) == nil then --fix way
+return  "???  áÇ íæÌÏ åäÇ ãÏíÑ ??_"
+end
+   message = '??? *ŞÜÇÆÜãÜå ÇáÜãÜÏÑÇÁ :*\n'
+  for k,v in pairs(data[tostring(msg.to.id)]['owners']) do
+    message = message ..i.. '- '..v..' [' ..k.. '] \n'
+   i = i + 1
+end
+  return message
+end
+
+local function filter_word(msg, word)
+    local data = load_data(_config.moderation.data)
+    if not data[tostring(msg.to.id)]['filterlist'] then
+      data[tostring(msg.to.id)]['filterlist'] = {}
+      save_data(_config.moderation.data, data)
+    end
+    if data[tostring(msg.to.id)]['filterlist'][(word)] then
+ return  "???  Çáßáãå *"..word.."* åí ÈÇáÊÃßíÏ ãä ŞÇÆãå ÇáãäÚ ?????"
+      end
+    data[tostring(msg.to.id)]['filterlist'][(word)] = true
+    save_data(_config.moderation.data, data)
+ return  "???  Çáßáãå *"..word.."* ÊãÊ ÇÖÇİÊåÇ Çáì ŞÇÆãå ÇáãäÚ  ?????"
+    end
+
+local function unfilter_word(msg, word)
+    local data = load_data(_config.moderation.data)
+    if not data[tostring(msg.to.id)]['filterlist'] then
+      data[tostring(msg.to.id)]['filterlist'] = {}
+      save_data(_config.moderation.data, data)
+    end
+    if data[tostring(msg.to.id)]['filterlist'][word] then
+      data[tostring(msg.to.id)]['filterlist'][(word)] = nil
+      save_data(_config.moderation.data, data)
+return  "???  Çáßáãå *"..word.."* Êã ÇáÓãÇÍ ÈåÇ  ?????"
+    else
+      return  "???  Çáßáãå *"..word.."* åí ÈÇáÊÃßíÏ ãÓãæÍ ÈåÇ ?????"
+    end
+  end
+---------------Lock id-------------------
+local function lock_id(msg, data, target)
+if not is_mod(msg) then
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+end
+local id = data[tostring(target)]["settings"]["lock_id"] 
+if id == "no" then
+return '??? ãÑÍÈÂ ÚÒíÒí \n???  ÇáÇíÏí ÈÇáÊÇßíÏ Êã ÇíŞÇİå  ?????'
+else
+data[tostring(target)]["settings"]["lock_id"] = "no"
+save_data(_config.moderation.data, data) 
+return '???  ãÑÍÈÂ ÚÒíÒí \n???  Êã ÇíŞÇİ ÇáÇíÏí  ?????'
+end
+end
+
+local function unlock_id(msg, data, target)
+ if not is_mod(msg) then
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+end 
+local id = data[tostring(target)]["settings"]["lock_id"]
+ if id == "yes" then
+return '???  ãÑÍÈÂ ÚÒíÒí \n???  ÇáÇíÏí ÈÇáÊÇßíÏ Êã ÊÔÛíáå ?????'
+else 
+data[tostring(target)]["settings"]["lock_id"] = "yes"
+save_data(_config.moderation.data, data) 
+return '???  ãÑÍÈÂ ÚÒíÒí \n???  Êã ÊÔÛíá ÇáÇíÏí  ?????'
+end
+end
+
+---------------unlock_bots_inkick-------------------
+function unlock_bots_inkick(msg, data, target)
+if not is_mod(msg) then
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ ??"
+end
+local lock_bots_inkick = data[tostring(target)]["settings"]["lock_bots_inkick"] 
+if lock_bots_inkick == "no" then
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÈæÊÇÊ ÈÇáØÑÏ ÈÇáÊÇßíÏ Êã İÊÍåÇ ?????'
+else
+data[tostring(target)]["settings"]["lock_bots_inkick"] = "no"
+save_data(_config.moderation.data, data) 
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÈæÊÇÊ ÈÇáØÑÏ  ?????'
+end
+end
+
+function lock_bots_inkick(msg, data, target)
+ if not is_mod(msg) then
+ return "?? ? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ ??"
+end 
+local lock_bots_inkick = data[tostring(target)]["settings"]["lock_bots_inkick"]
+ if lock_bots_inkick == "yes" then
+return '??? ãÑÍÈÂ ÚÒíÒí \n?? ? ÇáÈæÊÇÊ ÈÇáØÑÏ ÈÇáÊÇßíÏ Êã ŞİáåÇ ?????'
+else 
+data[tostring(target)]["settings"]["lock_bots_inkick"] = "yes"
+save_data(_config.moderation.data, data) 
+return '??? ãÑÍÈÂ ÚÒíÒí \n ??? Êã Şİá ÇáÈæÊÇÊ ÈÇáØÑÏ  ?????'
+end
+end
+---------------Lock replay-------------------
+local function lock_replay(msg, data, target)
+if not is_mod(msg) then
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+end
+local replay = data[tostring(target)]["settings"]["replay"] 
+if replay == "no" then
+return '??? ãÑÍÈÂ ÚÒíÒí \n???  ÇáÑÏæÏ ÈÇáÊÇßíÏ Êã ÇíŞÇİåÇ  ?????'
+else
+data[tostring(target)]["settings"]["replay"] = "no"
+save_data(_config.moderation.data, data) 
+return '???  ãÑÍÈÂ ÚÒíÒí \n???  Êã ÇíŞÇİ ÇáÑÏæÏ  ?????'
+end
+end
+
+local function unlock_replay(msg, data, target)
+ if not is_mod(msg) then
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+end 
+local replay = data[tostring(target)]["settings"]["replay"]
+ if replay == "yes" then
+return '???  ãÑÍÈÂ ÚÒíÒí \n???  ÇáÑÏæÏ ÈÇáÊÇßíÏ Êã ÊÔÛíáåÇ ?????'
+else 
+data[tostring(target)]["settings"]["replay"] = "yes"
+save_data(_config.moderation.data, data) 
+return '???  ãÑÍÈÂ ÚÒíÒí \n???  Êã ÊÔÛíá ÇáÑÏæÏ  ?????'
+end
+end
+
+---------------Lock Link-------------------
+local function lock_link(msg, data, target)
+
+if not is_mod(msg) then
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+end
+
+local lock_link = data[tostring(target)]["settings"]["lock_link"] 
+if lock_link == "yes" then
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÑæÇÈØ ÈÇáÊÃßíÏ Êã ŞİáåÇ ?????'
+else
+data[tostring(target)]["settings"]["lock_link"] = "yes"
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáÑæÇÈØ ?????'
+
+end
+end
+
+local function unlock_link(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end 
+
+local lock_link = data[tostring(target)]["settings"]["lock_link"]
+ if lock_link == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÑæÇÈØ ÈÇáÊÃßíÏ Êã İÊÍåÇ ?????'
+else 
+data[tostring(target)]["settings"]["lock_link"] = "no" save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÑæÇÈØ ?????'
+end
+end
+
+---------------Lock Tag-------------------
+local function lock_tag(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local lock_tag = data[tostring(target)]["settings"]["lock_tag"] 
+if lock_tag == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÊÇß(#) ÈÇáÊÃßíÏ Êã Şİáå ?????'
+
+else
+ data[tostring(target)]["settings"]["lock_tag"] = "yes"
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáÊÇß(#) ?????'
+
+end
+end
+
+local function unlock_tag(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+ 
+end
+local lock_tag = data[tostring(target)]["settings"]["lock_tag"]
+ if lock_tag == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÊÇß(#) ÈÇáÊÃßíÏ Êã İÊÍå ?????'
+else 
+data[tostring(target)]["settings"]["lock_tag"] = "no" save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÊÇß(#) ?????'
+end
+end
+
+---------------Lock Mention-------------------
+local function lock_mention(msg, data, target)
+ 
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local lock_mention = data[tostring(target)]["settings"]["lock_mention"] 
+if lock_mention == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÊĞßíÑ ÈÇáÊÃßíÏ Êã Şİáå ?????'
+
+else
+ data[tostring(target)]["settings"]["lock_mention"] = "yes"
+save_data(_config.moderation.data, data)
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáÊĞßíÑ ?????'
+
+end
+end
+
+local function unlock_mention(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+ 
+end 
+
+local lock_mention = data[tostring(target)]["settings"]["lock_mention"]
+ if lock_mention == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÊĞßíÑ ÈÇáÊÃßíÏ Êã İÊÍå ?????'
+else 
+data[tostring(target)]["settings"]["lock_mention"] = "no" save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÊĞßíÑ  ?????'
+end
+end
+
+
+---------------Lock Edit-------------------
+local function lock_edit(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local lock_edit = data[tostring(target)]["settings"]["lock_edit"] 
+if lock_edit == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÊÚÏíá ÈÇáÊÃßíÏ Êã Şİáå ?????'
+
+else
+ data[tostring(target)]["settings"]["lock_edit"] = "yes"
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáÊÚÏíá ?????'
+
+end
+end
+
+local function unlock_edit(msg, data, target)
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+end 
+
+local lock_edit = data[tostring(target)]["settings"]["lock_edit"]
+ if lock_edit == "no" then
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÊÚÏíá ÈÇáÊÃßíÏ Êã İÊÍå  ?????'
+else 
+data[tostring(target)]["settings"]["lock_edit"] = "no" save_data(_config.moderation.data, data) 
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÊÚÏíá ?????'
+end
+end
+
+---------------Lock spam-------------------
+local function lock_spam(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local lock_spam = data[tostring(target)]["settings"]["lock_spam"] 
+if lock_spam == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáßáÇíÔ ÈÇáÊÃßíÏ Êã ŞİáåÇ ?????'
+
+else
+ data[tostring(target)]["settings"]["lock_spam"] = "yes"
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáßáÇíÔ ?????'
+
+end
+end
+
+local function unlock_spam(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+ 
+end 
+
+local lock_spam = data[tostring(target)]["settings"]["lock_spam"]
+ if lock_spam == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáßáÇíÔ ÈÇáÊÃßíÏ Êã İÊÍåÇ ?????'
+
+else 
+data[tostring(target)]["settings"]["lock_spam"] = "no" 
+save_data(_config.moderation.data, data)
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáßáÇíÔ ?????'
+
+end
+end
+
+---------------Lock Flood-------------------
+local function lock_flood(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local lock_flood = data[tostring(target)]["settings"]["flood"] 
+if lock_flood == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÊßÑÇÑ ÈÇáÊÃßíÏ Êã Şİáå ?????'
+
+else
+ data[tostring(target)]["settings"]["flood"] = "yes"
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáÊßÑÇÑ ?????'
+
+end
+end
+
+local function unlock_flood(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end 
+
+local lock_flood = data[tostring(target)]["settings"]["flood"]
+ if lock_flood == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÊßÑÇÑ ÈÇáÊÃßíÏ Êã İÊÍå ?????'
+
+else 
+data[tostring(target)]["settings"]["flood"] = "no" save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÊßÑÇÑ ?????'
+
+end
+end
+
+---------------Lock Bots-------------------
+local function lock_bots(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local lock_bots = data[tostring(target)]["settings"]["lock_bots"] 
+if lock_bots == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÈæÊÇÊ ÈÇáÊÃßíÏ Êã ŞİáåÇ ?????'
+
+else
+ data[tostring(target)]["settings"]["lock_bots"] = "yes"
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n ?? ? Êã Şİá ÇáÈæÊÇÊ ?????'
+
+end
+end
+
+local function unlock_bots(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+ 
+end
+
+local lock_bots = data[tostring(target)]["settings"]["lock_bots"]
+ if lock_bots == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÈæÊÇÊ ÈÇáÊÃßíÏ Êã İÊÍåÇ ?????'
+
+else 
+data[tostring(target)]["settings"]["lock_bots"] = "no" save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÈæÊÇÊ ?????'
+
+end
+end
+
+---------------Lock Join-------------------
+local function lock_join(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local lock_join = data[tostring(target)]["settings"]["lock_join"] 
+if lock_join == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÇÖÇİå ÈÇáÊÇßíÏ Êã ŞİáåÇ   ?????'
+
+else
+ data[tostring(target)]["settings"]["lock_join"] = "yes"
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáÇÖÇİå ?????'
+
+end
+end
+
+local function unlock_join(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+end
+
+local lock_join = data[tostring(target)]["settings"]["lock_join"]
+ if lock_join == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÇÖÇİå ÈÇáÊÇßíÏ Êã İÊÍåÇ   ?????'
+
+else 
+data[tostring(target)]["settings"]["lock_join"] = "no"
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÇÖÇİå ?????'
+
+end
+end
+
+---------------Lock Markdown-------------------
+local function lock_markdown(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local lock_markdown = data[tostring(target)]["settings"]["lock_markdown"] 
+if lock_markdown == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáãÇÑßÏæÇä ÈÇáÊÇßíÏ Êã Şİáå  ?????'
+
+else
+ data[tostring(target)]["settings"]["lock_markdown"] = "yes"
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáãÇÑßÏæÇä ?????'
+
+end
+end
+
+local function unlock_markdown(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+ 
+end
+
+local lock_markdown = data[tostring(target)]["settings"]["lock_markdown"]
+ if lock_markdown == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáãÇÑßÏæÇä ÈÇáÊÃßíÏ Êã İÊÍå ?????'
+
+else 
+data[tostring(target)]["settings"]["lock_markdown"] = "no" save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáãÇÑßÏæÇä ?????'
+
+end
+end
+
+---------------Lock Webpage-------------------
+local function lock_webpage(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local lock_webpage = data[tostring(target)]["settings"]["lock_webpage"] 
+if lock_webpage == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáæíÈ ÈÇáÊÃßíÏ Êã Şİáå ?????'
+
+else
+ data[tostring(target)]["settings"]["lock_webpage"] = "yes"
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáæíÈ_??'
+
+end
+end
+
+local function unlock_webpage(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+ 
+end
+
+local lock_webpage = data[tostring(target)]["settings"]["lock_webpage"]
+ if lock_webpage == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáæíÈ ÈÇáÊÃßíÏ Êã İÊÍå ?????'
+
+else 
+data[tostring(target)]["settings"]["lock_webpage"] = "no"
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáæíÈ ?????'
+
+end
+end
+
+---------------Lock Pin-------------------
+local function lock_pin(msg, data, target) 
+
+if not is_mod(msg) then
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+end
+local lock_pin = data[tostring(target)]["settings"]["lock_pin"] 
+if lock_pin == "yes" then
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÊËÈíÊ ÈÇáÊÃßíÏ Êã Şİáå ?????'
+else
+ data[tostring(target)]["settings"]["lock_pin"] = "yes"
+save_data(_config.moderation.data, data) 
+return "??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáÊËÈíÊ_??"
+end
+end
+
+local function unlock_pin(msg, data, target)
+ if not is_mod(msg) then
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+end
+local lock_pin = data[tostring(target)]["settings"]["lock_pin"]
+ if lock_pin == "no" then
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÊËÈíÊ ÈÇáÊÃßíÏ Êã İÊÍå ?????'
+else 
+data[tostring(target)]["settings"]["lock_pin"] = "no"
+save_data(_config.moderation.data, data) 
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÊËÈíÊ ?????'
+end
+end
+---------------Mute Game-------------------
+function mute_game(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ ??"
+
+end
+
+local mute_game = data[tostring(target)]["mutes"]["mute_game"] 
+if mute_game == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n?? ? ÇáÇáÚÇÈ ÈÇáÊÃßíÏ Êã ŞİáåÇ ?????'
+
+else
+ data[tostring(target)]["mutes"]["mute_game"] = "yes" 
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáÇáÚÇÈ ?????'
+
+end
+end
+
+function unmute_game(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "?? ? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ ??"
+ 
+end
+
+local mute_game = data[tostring(target)]["mutes"]["mute_game"]
+ if mute_game == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÃáÚÇÈ ÈÇáÊÃßíÏ Êã İÊÍåÇ ?????'
+
+else 
+data[tostring(target)]["mutes"]["mute_game"] = "no"
+ save_data(_config.moderation.data, data)
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÃáÚÇÈ ?????'
+
+end
+end
+---------------Mute Inline-------------------
+function mute_inline(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "?? ? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ ??"
+
+end
+
+local mute_inline = data[tostring(target)]["mutes"]["mute_inline"] 
+if mute_inline == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÇäáÇíä ÈÇáÊÃßíÏ Êã Şİáå ?????'
+
+else
+ data[tostring(target)]["mutes"]["mute_inline"] = "yes" 
+save_data(_config.moderation.data, data) 
+
+return '?? ? ãÑÍÈÂ ÚÒíÒí \n?? ? Êã Şİá ÇáÇäáÇíä ?????'
+
+end
+end
+
+function unmute_inline(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ ??"
+
+end 
+
+local mute_inline = data[tostring(target)]["mutes"]["mute_inline"]
+ if mute_inline == "no" then
+
+return '?? ? ãÑÍÈÂ ÚÒíÒí \n?? ? ÇáÇäáÇíä ÈÇáÊÃßíÏ Êã İÊÍå ?????'
+
+else 
+data[tostring(target)]["mutes"]["mute_inline"] = "no"
+ save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÇäáÇíä ?????'
+
+end
+end
+---------------Mute Gif-------------------
+local function mute_gif(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local mute_gif = data[tostring(target)]["mutes"]["mute_gif"] 
+if mute_gif == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáãÊÍÑßå ÈÇáÊÃßíÏ Êã ŞİáåÇ ?????'
+
+else
+ data[tostring(target)]["mutes"]["mute_gif"] = "yes" 
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáãÊÍÑßå ?????'
+
+end
+end
+
+local function unmute_gif(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end 
+
+local mute_gif = data[tostring(target)]["mutes"]["mute_gif"]
+ if mute_gif == "no" then
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáãÊÍÑßå ÈÇáÊÃßíÏ Êã İÊÍåÇ ?????'
+
+else 
+data[tostring(target)]["mutes"]["mute_gif"] = "no"
+ save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáãÊÍÑßå ?????'
+
+end
+end
+---------------Mute Game-------------------
+local function mute_game(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local mute_game = data[tostring(target)]["mutes"]["mute_game"] 
+if mute_game == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÇáÚÇÈ ÈÇáÊÃßíÏ Êã ŞİáåÇ ?????'
+
+else
+ data[tostring(target)]["mutes"]["mute_game"] = "yes" 
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáÇáÚÇÈ ?????'
+
+end
+end
+
+local function unmute_game(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+ 
+end
+
+local mute_game = data[tostring(target)]["mutes"]["mute_game"]
+ if mute_game == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÃáÚÇÈ ÈÇáÊÃßíÏ Êã İÊÍåÇ ?????'
+
+else 
+data[tostring(target)]["mutes"]["mute_game"] = "no"
+ save_data(_config.moderation.data, data)
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÃáÚÇÈ ?????'
+
+end
+end
+---------------Mute Inline-------------------
+local function mute_inline(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local mute_inline = data[tostring(target)]["mutes"]["mute_inline"] 
+if mute_inline == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÇäáÇíä ÈÇáÊÃßíÏ Êã Şİáå ?????'
+
+else
+ data[tostring(target)]["mutes"]["mute_inline"] = "yes" 
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáÇäáÇíä ?????'
+
+end
+end
+
+local function unmute_inline(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end 
+
+local mute_inline = data[tostring(target)]["mutes"]["mute_inline"]
+ if mute_inline == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÇäáÇíä ÈÇáÊÃßíÏ Êã İÊÍå ?????'
+
+else 
+data[tostring(target)]["mutes"]["mute_inline"] = "no"
+ save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÇäáÇíä ?????'
+
+end
+end
+---------------Mute Text-------------------
+local function mute_text(msg, data, target) 
+
+if not is_mod(msg) then
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local mute_text = data[tostring(target)]["mutes"]["mute_text"] 
+if mute_text == "yes" then
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÏÑÔå ÈÇáÊÃßíÏ Êã ŞİáåÇ ?????'
+
+else
+ data[tostring(target)]["mutes"]["mute_text"] = "yes" 
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáÏÑÏÔå ?????'
+
+end
+end
+
+local function unmute_text(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "?? ? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+ 
+end
+
+local mute_text = data[tostring(target)]["mutes"]["mute_text"]
+ if mute_text == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÏÑÏÔå ÈÇáÊÃßíÏ Êã İÊÍåÇ ?????'
+
+else 
+data[tostring(target)]["mutes"]["mute_text"] = "no"
+ save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÏÑÏÔå ?????'
+
+end
+end
+---------------Mute photo-------------------
+local function mute_photo(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local mute_photo = data[tostring(target)]["mutes"]["mute_photo"] 
+if mute_photo == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÕæÑ ÈÇáÊÃßíÏ Êã ŞİáåÇ ?????'
+
+else
+ data[tostring(target)]["mutes"]["mute_photo"] = "yes" 
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáÕæÑ ?????'
+
+end
+end
+
+local function unmute_photo(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+ 
+local mute_photo = data[tostring(target)]["mutes"]["mute_photo"]
+ if mute_photo == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÕæÑ ÈÇáÊÃßíÏ Êã İÊÍåÇ ?????'
+
+else 
+data[tostring(target)]["mutes"]["mute_photo"] = "no"
+ save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÕæÑ ?????'
+
+end
+end
+---------------Mute Video-------------------
+local function mute_video(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local mute_video = data[tostring(target)]["mutes"]["mute_video"] 
+if mute_video == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáİíÏíæ ÈÇáÊÃßíÏ Êã ŞİáåÇ ?????'
+
+else
+ data[tostring(target)]["mutes"]["mute_video"] = "yes" 
+save_data(_config.moderation.data, data)
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáİíÏíæ ?????'
+
+end
+end
+
+local function unmute_video(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end 
+
+local mute_video = data[tostring(target)]["mutes"]["mute_video"]
+ if mute_video == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáİíÏíæ íÇáÊÃßíÏ Êã İÊÍåÇ ?????'
+
+else 
+data[tostring(target)]["mutes"]["mute_video"] = "no"
+ save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáİíÏíæ ?????'
+end
+end
+---------------Mute Audio-------------------
+local function mute_audio(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local mute_audio = data[tostring(target)]["mutes"]["mute_audio"] 
+if mute_audio == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÈÕãÇÊ ÈÇáÊÃßíÏ Êã ŞİáåÇ ?????'
+
+else
+ data[tostring(target)]["mutes"]["mute_audio"] = "yes" 
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáÈÕãÇÊ ?????'
+
+end
+end
+
+local function unmute_audio(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end 
+
+local mute_audio = data[tostring(target)]["mutes"]["mute_audio"]
+ if mute_audio == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÈÕãÇÊ ÈÇáÊÃßíÏ Êã İÊÍåÇ ?????'
+
+else 
+data[tostring(target)]["mutes"]["mute_audio"] = "no"
+ save_data(_config.moderation.data, data)
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÈÕãÇÊ ?????'
+
+end
+end
+---------------Mute Voice-------------------
+local function mute_voice(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local mute_voice = data[tostring(target)]["mutes"]["mute_voice"] 
+if mute_voice == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÕæÊ ÈÇáÊÃßíÏ Êã Şİáå ?????'
+
+else
+ data[tostring(target)]["mutes"]["mute_voice"] = "yes" 
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáÕæÊ ?????'
+end
+
+end
+
+local function unmute_voice(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end 
+
+local mute_voice = data[tostring(target)]["mutes"]["mute_voice"]
+ if mute_voice == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÕæÊ ÈÇáÊÃßíÏ Êã İÊÍå ?????'
+
+else 
+data[tostring(target)]["mutes"]["mute_voice"] = "no"
+ save_data(_config.moderation.data, data)
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÕæÊ ?????'
+
+end
+end
+---------------Mute Sticker-------------------
+local function mute_sticker(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local mute_sticker = data[tostring(target)]["mutes"]["mute_sticker"] 
+if mute_sticker == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáãáÕŞÇÊ ÈÇáÊÃßíÏ Êã ŞİáåÇ ?????'
+
+else
+ data[tostring(target)]["mutes"]["mute_sticker"] = "yes" 
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáãáÕŞÇÊ ?????'
+
+end
+end
+
+local function unmute_sticker(msg, data, target)
+
+ if not is_mod(msg) then
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+end
+
+local mute_sticker = data[tostring(target)]["mutes"]["mute_sticker"]
+ if mute_sticker == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáãáÕŞÇÊ ÈÇáÊÃßíÏ Êã İÊÍåÇ ?????'
+
+else 
+data[tostring(target)]["mutes"]["mute_sticker"] = "no"
+ save_data(_config.moderation.data, data)
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáãáÕŞÇÊ ?????'
+ 
+end
+end
+---------------Mute Contact-------------------
+local function mute_contact(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local mute_contact = data[tostring(target)]["mutes"]["mute_contact"] 
+if mute_contact == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÌåÇÊ ÇáÇÊÕÇá ÈÇáÊÃßíÏ Êã ŞİáåÇ ?????'
+
+else
+ data[tostring(target)]["mutes"]["mute_contact"] = "yes" 
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÌåÇÊ ÇáÇÊÕÇá ?????'
+
+end
+end
+
+local function unmute_contact(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end 
+
+local mute_contact = data[tostring(target)]["mutes"]["mute_contact"]
+ if mute_contact == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÌåÇÊ ÇáÇÊÕÇá ÈÇáÊÃßíÏ Êã İÊÍåÇ ?????'
+
+else 
+data[tostring(target)]["mutes"]["mute_contact"] = "no"
+ save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÌåÇÊ ÇáÇÊÕÇá ?????'
+
+end
+end
+---------------Mute Forward-------------------
+local function mute_forward(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local mute_forward = data[tostring(target)]["mutes"]["mute_forward"] 
+if mute_forward == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÊæÌíå ÈÇáÊÃßíÏ Êã ŞİáåÇ ?????'
+
+else
+ data[tostring(target)]["mutes"]["mute_forward"] = "yes" 
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáÊæÌíå ?????'
+
+end
+end
+
+local function unmute_forward(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end 
+
+local mute_forward = data[tostring(target)]["mutes"]["mute_forward"]
+ if mute_forward == "no" then
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÊæÌíå ÈÇáÊÃßíÏ Êã İÊÍåÇ ?????'
+else 
+data[tostring(target)]["mutes"]["mute_forward"] = "no"
+ save_data(_config.moderation.data, data)
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáÊæÌíå ?????'
+end
+end
+---------------Mute Location-------------------
+local function mute_location(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local mute_location = data[tostring(target)]["mutes"]["mute_location"] 
+if mute_location == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáãæŞÚ ÈÇáÊÃßíÏ Êã Şİáå ?????'
+
+else
+ data[tostring(target)]["mutes"]["mute_location"] = "yes" 
+save_data(_config.moderation.data, data)
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáãæŞÚ ?????'
+
+end
+end
+
+local function unmute_location(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end 
+
+local mute_location = data[tostring(target)]["mutes"]["mute_location"]
+ if mute_location == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáãæŞÚ ÈÇáÊÃßíÏ Êã İÊÍå ?????'
+
+else 
+data[tostring(target)]["mutes"]["mute_location"] = "no"
+ save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáãæŞÚ ?????'
+
+end
+end
+---------------Mute Document-------------------
+local function mute_document(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local mute_document = data[tostring(target)]["mutes"]["mute_document"] 
+if mute_document == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáãáİÇÊ ÈÇáÊÃßíÏ Êã ŞİáåÇ ?????'
+
+else
+ data[tostring(target)]["mutes"]["mute_document"] = "yes" 
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáãáİÇÊ ?????'
+
+end
+end
+
+local function unmute_document(msg, data, target)
+
+ if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+end
+ 
+
+local mute_document = data[tostring(target)]["mutes"]["mute_document"]
+ if mute_document == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáãáİÇÊ ÈÇáÊÃßíÏ Êã İÊÍåÇ ?????'
+
+else 
+data[tostring(target)]["mutes"]["mute_document"] = "no"
+ save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáãáİÇÊ ?????'
+
+end
+end
+---------------Mute TgService-------------------
+local function mute_tgservice(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local mute_tgservice = data[tostring(target)]["mutes"]["mute_tgservice"] 
+if mute_tgservice == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÇÔÚÇÑÇÊ ÈÇáÊÃßíÏ Êã İÊÍåÇ ?????'
+
+else
+ data[tostring(target)]["mutes"]["mute_tgservice"] = "yes" 
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáÇÔÚÇÑÇÊ ?????'
+end
+end
+
+local function unmute_tgservice(msg, data, target)
+
+ if not is_mod(msg) then
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+end
+
+local mute_tgservice = data[tostring(target)]["mutes"]["mute_tgservice"]
+ if mute_tgservice == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÇÔÚÇÑÇÊ ÈÇáÊÃßíÏ Êã İÊÍåÇ ?????'
+else 
+data[tostring(target)]["mutes"]["mute_tgservice"] = "no"
+ save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáÇÔÚÇÑÇÊ ÈÇáÊÃßíÏ Êã İÊÍåÇ ?????'
+
+end
+end
+
+---------------Mute Keyboard-------------------
+local function mute_keyboard(msg, data, target) 
+
+if not is_mod(msg) then
+
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+
+end
+
+local mute_keyboard = data[tostring(target)]["mutes"]["mute_keyboard"] 
+if mute_keyboard == "yes" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáßíÈæÑÏ ÈÇáÊÃßíÏ Êã Şİáå ?????'
+
+else
+ data[tostring(target)]["mutes"]["mute_keyboard"] = "yes" 
+save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá ÇáßíÈæÑÏ ?????'
+
+end
+end
+
+local function unmute_keyboard(msg, data, target)
+
+ if not is_mod(msg) then
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+end
+
+local mute_keyboard = data[tostring(target)]["mutes"]["mute_keyboard"]
+ if mute_keyboard == "no" then
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? ÇáßíÈæÑÏ ÈÇáÊÃßíÏ Êã İÊÍå ?????'
+ 
+else 
+data[tostring(target)]["mutes"]["mute_keyboard"] = "no"
+ save_data(_config.moderation.data, data) 
+
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ ÇáßíÈæÑÏ ?????'
+ 
+end
+end
+
+function group_settings(msg, target) 	
+ local target = msg.to.id 
+local data = load_data(_config.moderation.data)
+if not is_mod(msg) then
+ return "??? åĞÇ ÇáÇãÑ íÎÕ ÇáÇÏãäíå İŞØ  ??"
+end
+if data[tostring(target)] then 	
+if data[tostring(target)]["settings"]["num_msg_max"] then 	
+NUM_MSG_MAX = tonumber(data[tostring(target)]['settings']['num_msg_max'])
+else 	
+NUM_MSG_MAX = 5
+end
+end
+local expire_date = ''
+local expi = redis:ttl('ExpireDate:'..msg.to.id)
+local day = math.floor(expi / 86400) + 1
+if expi == -1 then
+	expire_date = 'ãİÊæÍ????'
+    elseif day == 1 then
+	expire_date = 'íæã æÇÍÏ' 
+	elseif day == 2 then
+   	expire_date = 'íæãíä'
+	elseif day == 3 then
+   	expire_date = '3 ÇíÇã'
+   	else
+	expire_date = day..' íæã'
+end
+local settings = data[tostring(target)]["settings"] 
+local mutes = data[tostring(target)]["mutes"] 
+
+ text = "???? ?` ÇÚÏÇÏÇÊ ÇáæÓÇÆØ :`"
+ .."\n??? Şİá ÇáãÊÍÑßå : "..mutes.mute_gif
+ .."\n??? Şİá ÇáÏÑÏÔå : "..mutes.mute_text
+ .."\n??? Şİá ÇáÇäáÇíä : "..mutes.mute_inline
+ .."\n??? Şİá ÇáÕæÑ : "..mutes.mute_photo
+ .."\n??? Şİá ÇáİíÏíæ : "..mutes.mute_video
+ .."\n??? Şİá ÇáÈÕãÇÊ : "..mutes.mute_audio
+ .."\n??? Şİá ÇáÕæÊ : "..mutes.mute_voice
+ .."\n??? Şİá ÇáãáÕŞÇÊ : "..mutes.mute_sticker
+ .."\n??? Şİá ÇáÌåÇÊ : "..mutes.mute_contact
+ .."\n??? Şİá ÇáÊæÌíå : "..mutes.mute_forward
+.."\n ??? Şİá ÇáãæŞÚ : "..mutes.mute_location
+ .."\n??? Şİá ÇáãáİÇÊ : "..mutes.mute_document
+ .."\n??? Şİá ÇáÇÔÚÇÑÇÊ : "..mutes.mute_tgservice
+.."\n\n???? ?` ÇÚÏÇÏÇÊ ÇáãÌãæÚå :` "
+ .."\n??? Şİá ÇáÊÚÏíá : "..settings.lock_edit
+ .."\n??? Şİá ÇáÑæÇÈØ : "..settings.lock_link
+ .."\n??? Şİá ÇáÇÖÇİå : "..settings.lock_join
+ .."\n??? Şİá ÇáÊÇß : "..settings.lock_tag
+ .."\n??? Şİá ÇáÊßÑÇÑ : "..settings.flood
+.."\n ??? Şİá ÇáßáÇíÔ : "..settings.lock_spam .."\n??? Şİá ÇáæíÈ : "..settings.lock_webpage
+ .."\n??? Şİá ÇáãÇÑßÏæä : "..settings.lock_markdown
+ .."\n??? Şİá ÇáÊËÈíÊ : "..settings.lock_pin
+ .."\n??? Şİá ÇáÈæÊÇÊ : "..settings.lock_bots
+ .."\n??? Şİá  ÇáÈæÊÇÊ ÈÇáØÑÏ : "..settings.lock_bots_inkick
+ .."\n??? ÚÏÏ ÇáÊßÑÇÑ : "..NUM_MSG_MAX
+.."\n\n???? ?` ÇÚÏÇÏÇÊ ÇÎÑì : `"
+.."\n??? ÊÔÛíá ÇáÊÑÍíÈ : "..settings.welcome
+.."\n??? ÊÔÛíá ÇáÑÏæÏ : "..settings.replay
+.."\n??? ÊÔÛíá ÇáÇíÏí : "..settings.lock_id
+.."\n??? ÊÔÛíá ÇáÊÍĞíÑ : "..settings.lock_woring
+
+ .." \n\n???? ?  ÇáÇÔÊÑÇß :` "..expire_date
+.."`"
+
+
+
+
+text = string.gsub(text, 'yes', '??')
+text = string.gsub(text, 'no', '?')
+return text
+end
+
+local function moody(msg, matches)
+local data = load_data(_config.moderation.data)
+local target = msg.to.id
+----------------Begin Msg Matches--------------
+if msg.to.type == 'private' then return end
+
+if matches[1] == "ÊİÚíá" and is_sudo(msg) then
+return modadd(msg)
+   end
+if matches[1] == "ÊÚØíá" and is_sudo(msg) then
+return modrem(msg)
+ end
+ 
+ if not data[tostring(msg.to.id)] then return end
+ 
+if matches[1] == "ÇáÇÏÇÑííä" and is_mod(msg) then
+return ownerlist(msg)
+   end
+if matches[1] == "ŞÇÆãå ÇáãäÚ" and is_mod(msg) then
+return filter_list(msg)
+   end
+if matches[1] == "ÇáÇÏãäíå" and is_mod(msg) then
+return modlist(msg)
+   end
+if matches[1] == "ÇáÇÚÖÇÁ ÇáããíÒíä" and is_mod(msg) then
+return whitelist(msg.to.id)
+   end
+
+if matches[1] == "ÇíÏí" then
+local lock_id = data[tostring(msg.to.id)]["settings"]["lock_id"] 
+ if lock_id == 'yes' then
+   if not matches[2] and not msg.reply_to_message then
+local status = getUserProfilePhotos(msg.from.id, 0, 0)
+local rank
+if is_sudo(msg) then
+rank = 'ÇáãØæÑ ãÇáÊí ??'
+elseif is_owner(msg) then
+rank = 'ãÏíÑ ÇáãÌãæÚå ??'
+elseif is_mod(msg) then
+rank = 'ÇÏãä İí ÇáÈæÊ ??'
+elseif  is_whitelist(msg.from.id, msg.to.id) then
+rank = 'ÚÖæ ããíÒ ????'
+else
+rank = 'ãÌÑÏ ÚÖæ ??'
+end
+if msg.from.username then
+userxn = "@"..(msg.from.username or "---")
+else
+userxn = "áÇ íÊæİÑ"
+end
+local msgs = tonumber(redis:get('msgs:'..msg.from.id..':'..msg.to.id) or 0)
+if status.result.total_count ~= 0 then
+	sendPhotoById(msg.to.id, status.result.photos[1][1].file_id, msg.id, '?? ? ãÚÑİß : '..userxn..'\n?? ? ÇíÏíß  : '..msg.from.id..'\n?? ? ÑÊÈÊß  : '..rank..'\n ?? ÚÏÏ ÑÓÇÆáß : ['..msgs..'] ÑÓÇáå ????\n')
+	else
+return '???áÇ ÊæÌÏ ÕæÑå İí ÈÑæİÇíáß !!! \n?? ? ãÚÑİß : '..userxn..'\n?? ? ÇíÏíß  : '..msg.from.id..'\n?? ? ÑÊÈÊß  : '..rank..'\n?? ? ÚÏÏ ÑÓÇÆáß : ['..msgs..'] ÑÓÇáå ????\n'
+end
+   elseif not msg.reply_to_message and string.match(matches[2], '@[%a%d_]')  and matches[2] ~= "ÇáÊæÌíå" and is_mod(msg) then
+    local status = resolve_username(matches[2])
+		if not status.result then
+			return '???áÇ íæÌÏ ÚÖæ ÈåĞÇ ÇáãÚÑİ ...'
+		end
+     return ""..status.information.id..""
+   elseif matches[2] == "ÇáÊæÌíå" and msg.reply_to_message and msg.reply.fwd_from then
+     return ""..msg.reply.fwd_from.id..""
+   end
+end
+end
+if matches[1] == "ÊËÈíÊ" and is_mod(msg) and msg.reply_id then
+local lock_pin = data[tostring(msg.to.id)]["settings"]["lock_pin"] 
+ if lock_pin == 'yes' then
+if is_owner(msg) then
+    data[tostring(msg.to.id)]['pin'] = msg.reply_id
+	  save_data(_config.moderation.data, data)
+pinChatMessage(msg.to.id, msg.reply_id)
+return "??? ãÑÍÈÂ ÚÒíÒí\n???  Êã ÊËÈíÊ ÇáÑÓÇáå ?????"
+elseif not is_owner(msg) then
+   return "??? ááãÏÑÇÁ İŞØ ????"
+ end
+ elseif lock_pin == 'no' then
+    data[tostring(msg.to.id)]['pin'] = msg.reply_id
+	  save_data(_config.moderation.data, data)
+pinChatMessage(msg.to.id, msg.reply_id)
+return "??? ãÑÍÈÂ ÚÒíÒí\n???  Êã ÊËÈíÊ ÇáÑÓÇáå ?????"
+end
+end
+if matches[1] == 'ÇáÛÇÁ ÇáÊËÈíÊ' and is_mod(msg) then
+local lock_pin = data[tostring(msg.to.id)]["settings"]["lock_pin"] 
+ if lock_pin == 'yes' then
+if is_owner(msg) then
+unpinChatMessage(msg.to.id)
+return "??? ãÑÍÈÂ ÚÒíÒí\n???  Êã ÇáÛÇÁ ÊËÈíÊ ÇáÑÓÇáå ?????"
+elseif not is_owner(msg) then
+   return "??? ááãÏÑÇÁ İŞØ ????"
+ end
+ elseif lock_pin == 'no' then
+unpinChatMessage(msg.to.id)
+return "??? ãÑÍÈÂ ÚÒíÒí\n???  Êã ÇáÛÇÁ ÊËÈíÊ ÇáÑÓÇáå ?????"
+end
+end
+
+if matches[1] == 'ÇáÍãÇíå' then
+return group_settings(msg, target)
+end
+if matches[1] == "ÑİÚ ÇáãÏíÑ" and is_sudo(msg) then
+   if not matches[2] and msg.reply_to_message then
+	if msg.reply.username then
+	username = "@"..check_markdown(msg.reply.username)
+    else
+	username = escape_markdown(msg.reply.print_name)
+    end
+   if data[tostring(msg.to.id)]['owners'][tostring(msg.reply.id)] then
+    return "??? ÇáÜÚÜÖÜæ  :  "..username.."\n??? ÇáÇíÜÏí :   ["..msg.reply.id.."]\n??? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ãÜÏíÜÑ ?????"
+    else
+  data[tostring(msg.to.id)]['owners'][tostring(msg.reply.id)] = username
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  "..username.."\n??? ÇáÇíÜÏí :   ["..msg.reply.id.."] \n??? ÊÜã ÊÜÑŞÜíÜÊÜå áÜíÜÕÜÈÜÍ ãÜÏíÜÑ ?????"
+      end
+	  elseif matches[2] and matches[2]:match('^%d+') then
+  if not getUser(matches[2]).result then
+   return "??? áÇ íæÌÏ ÚÖæ ÈåĞÇ ÇáãÚÑİ."
+    end
+	  local user_name = '@'..check_markdown(getUser(matches[2]).information.username)
+	  if not user_name then
+		user_name = escape_markdown(getUser(matches[2]).information.first_name)
+	  end
+	  if data[tostring(msg.to.id)]['owners'][tostring(matches[2])] then
+    return "??? ÇáÜÚÜÖÜæ  :  "..user_name.."\n??? ÇáÇíÜÏí :   ["..matches[2].."]\n??? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ãÜÏíÜÑ ?????"
+    else
+  data[tostring(msg.to.id)]['owners'][tostring(matches[2])] = user_name
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  "..user_name.."\n??? ÇáÇíÜÏí :   ["..matches[2].."] \n??? ÊÜã ÊÜÑŞÜíÜÊÜå áÜíÜÕÜÈÜÍ ãÜÏíÜÑ ?????"
+   end
+   elseif matches[2] and string.match(matches[2], '@[%a%d_]')  then
+  if not resolve_username(matches[2]).result then
+   return "??? áÇ íæÌÏ ÚÖæ ÈåĞÇ ÇáãÚÑİ."
+    end
+   local status = resolve_username(matches[2]).information
+   if data[tostring(msg.to.id)]['owners'][tostring(status.id)] then
+    return "??? ÇáÜÚÜÖÜæ  :  @"..check_markdown(status.username).."\n??? ÇáÇíÜÏí :   ["..status.id.."]\n??? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ãÜÏíÜÑ ?????"
+    else
+  data[tostring(msg.to.id)]['owners'][tostring(status.id)] = check_markdown(status.username)
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  @"..check_markdown(status.username).."\n??? ÇáÇíÜÏí :   ["..status.id.."] \n??? ÊÜã ÊÜÑŞÜíÜÊÜå áÜíÜÕÜÈÜÍ ãÜÏíÜÑ ?????"
+   end
+end
+end
+if matches[1] == "ÊäÒíá ÇáãÏíÑ" and is_sudo(msg) then
+      if not matches[2] and msg.reply_to_message then
+	if msg.reply.username then
+	username = "@"..check_markdown(msg.reply.username)
+    else
+	username = escape_markdown(msg.reply.print_name)
+    end
+   if not data[tostring(msg.to.id)]['owners'][tostring(msg.reply.id)] then
+    return "??? ÇáÜÚÜÖÜæ  :  "..username.."\n??? ÇáÇíÜÏí :   ["..msg.reply.id.."]\n??? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ÊÜã ÊÜäÜÒíÜáÜå ãÜä ÇáÇÏÇÑå  ?????"
+    else
+  data[tostring(msg.to.id)]['owners'][tostring(msg.reply.id)] = nil
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  "..username.."\n??? ÇáÇíÜÏí :   ["..msg.reply.id.."]\n??? ÊÜã ÊÜäÜÒíÜáÜå ãÜä ÇáÇÏÇÑå  ????? "
+      end
+	  elseif matches[2] and matches[2]:match('^%d+') then
+  if not getUser(matches[2]).result then
+   return "??? áÇ íæÌÏ ÚÖæ ÈåĞÇ ÇáãÚÑİ."
+    end
+	  local user_name = '@'..check_markdown(getUser(matches[2]).information.username)
+	  if not user_name then
+		user_name = escape_markdown(getUser(matches[2]).information.first_name)
+	  end
+	  if not data[tostring(msg.to.id)]['owners'][tostring(matches[2])] then
+    return "??? ÇáÜÚÜÖÜæ  :  "..user_name.."\n??? ÇáÇíÜÏí :   ["..matches[2].."]\n??? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ÊÜã ÊÜäÜÒíÜáÜå ãÜä ÇáÇÏÇÑå  ?????"
+    else
+  data[tostring(msg.to.id)]['owners'][tostring(matches[2])] = nil
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  "..user_name.."\n??? ÇáÇíÜÏí :   ["..matches[2].."]\n??? ÊÜã ÊÜäÜÒíÜáÜå ãÜä ÇáÇÏÇÑå  ????? "
+      end
+   elseif matches[2] and string.match(matches[2], '@[%a%d_]')  then
+  if not resolve_username(matches[2]).result then
+   return "??? áÇ íæÌÏ ÚÖæ ÈåĞÇ ÇáãÚÑİ."
+    end
+   local status = resolve_username(matches[2]).information
+   if not data[tostring(msg.to.id)]['owners'][tostring(status.id)] then
+    return "??? ÇáÜÚÜÖÜæ  :  @"..check_markdown(status.username).."\n??? ÇáÇíÜÏí :   ["..status.id.."]\n??? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ÊÜã ÊÜäÜÒíÜáÜå ãÜä ÇáÇÏÇÑå  ?????"
+    else
+  data[tostring(msg.to.id)]['owners'][tostring(status.id)] = nil
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  @"..check_markdown(status.username).."\n??? ÇáÇíÜÏí :   ["..status.id.."]\n??? ÊÜã ÊÜäÜÒíÜáÜå ãÜä ÇáÇÏÇÑå  ????? "
+      end
+end
+end
+if matches[1] == "ÑİÚ ÇÏãä" and is_owner(msg) then
+   if not matches[2] and msg.reply_to_message then
+	if msg.reply.username then
+	username = "@"..check_markdown(msg.reply.username)
+    else
+	username = escape_markdown(msg.reply.print_name)
+    end
+   if data[tostring(msg.to.id)]['mods'][tostring(msg.reply.id)] then
+    return "??? ÇáÜÚÜÖÜæ  :  "..username.."\n??? ÇáÇíÜÏí :   ["..msg.reply.id.."]\n??? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ÇÏãÜä  ?????"
+    else
+  data[tostring(msg.to.id)]['mods'][tostring(msg.reply.id)] = username
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  "..username.."\n??? ÇáÇíÜÏí :   ["..msg.reply.id.."]\n??? ÊÜã ÊÜÑŞÜíÜÊÜå áÜíÜÕÜÈÜÍ ÇÏãÜä  ?????"
+      end
+	  elseif matches[2] and matches[2]:match('^%d+') then
+  if not getUser(matches[2]).result then
+   return "??? áÇ íæÌÏ ÚÖæ ÈåĞÇ ÇáãÚÑİ."
+    end
+	  local user_name = '@'..check_markdown(getUser(matches[2]).information.username)
+	  if not user_name then
+		user_name = escape_markdown(getUser(matches[2]).information.first_name)
+	  end
+	  if data[tostring(msg.to.id)]['mods'][tostring(matches[2])] then
+    return "??? ÇáÜÚÜÖÜæ  :  "..user_name.."\n??? ÇáÇíÜÏí :   ["..matches[2].."]\n? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ÇÏãÜä  ?????"
+    else
+  data[tostring(msg.to.id)]['mods'][tostring(matches[2])] = user_name
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  "..user_name.."\n??? ÇáÇíÜÏí :   ["..matches[2].."]\n??? ÊÜã ÊÜÑŞÜíÜÊÜå áÜíÜÕÜÈÜÍ ÇÏãÜä  ?????"
+   end
+   elseif matches[2] and string.match(matches[2], '@[%a%d_]')  then
+  if not resolve_username(matches[2]).result then
+   return "??? áÇ íæÌÏ ÚÖæ ÈåĞÇ ÇáãÚÑİ."
+    end
+   local status = resolve_username(matches[2]).information
+   if data[tostring(msg.to.id)]['mods'][tostring(user_id)] then
+    return "??? ÇáÜÚÜÖÜæ  :  @"..check_markdown(status.username).."\n??? ÇáÇíÜÏí :   ["..status.id.."]\n??? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ÇÏãÜä  ?????"
+    else
+  data[tostring(msg.to.id)]['mods'][tostring(status.id)] = check_markdown(status.username)
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  @"..check_markdown(status.username).."\n??? ÇáÇíÜÏí :   ["..status.id.."]\n??? ÊÜã ÊÜÑŞÜíÜÊÜå áÜíÜÕÜÈÜÍ ÇÏãÜä  ?????"
+   end
+end
+end
+if matches[1] == "ÊäÒíá ÇÏãä" and is_owner(msg) then
+      if not matches[2] and msg.reply_to_message then
+	if msg.reply.username then
+	username = "@"..check_markdown(msg.reply.username)
+    else
+	username = escape_markdown(msg.reply.print_name)
+    end
+   if not data[tostring(msg.to.id)]['mods'][tostring(msg.reply.id)] then
+    return "??? ÇáÜÚÜÖÜæ  :  "..username.."\n??? ÇáÇíÜÏí :   ["..msg.reply.id.."]\n??? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ÊÜã ÊÜäÜÒíÜáÜå ãÜä ÇáÇÏãÜäÜíÜå  ?????"
+    else
+  data[tostring(msg.to.id)]['mods'][tostring(msg.reply.id)] = nil
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  "..username.."\n??? ÇáÇíÜÏí :   ["..msg.reply.id.."]\n??? ÊÜã ÊÜäÜÒíÜáÜå ãÜä ÇáÇÏãÜäÜíÜå  ?????"
+      end
+	  elseif matches[2] and matches[2]:match('^%d+') then
+  if not getUser(matches[2]).result then
+   return "??? áÇ íæÌÏ ÚÖæ ÈåĞÇ ÇáãÚÑİ."
+    end
+	  local user_name = '@'..check_markdown(getUser(matches[2]).information.username)
+	  if not user_name then
+		user_name = escape_markdown(getUser(matches[2]).information.first_name)
+	  end
+	  if not data[tostring(msg.to.id)]['mods'][tostring(matches[2])] then
+    return "??? ÇáÜÚÜÖÜæ  :  "..user_name.."\n??? ÇáÇíÜÏí :   ["..matches[2].."]\n??? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ÊÜã ÊÜäÜÒíÜáÜå ãÜä ÇáÇÏãÜäÜíÜå  ?????"
+    else
+  data[tostring(msg.to.id)]['mods'][tostring(matches[2])] = user_name
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  "..user_name.."\n??? ÇáÇíÜÏí :   ["..matches[2].."]\n??? ÊÜã ÊÜäÜÒíÜáÜå ãÜä ÇáÇÏãÜäÜíÜå  ?????"
+      end
+   elseif matches[2] and string.match(matches[2], '@[%a%d_]')  then
+  if not resolve_username(matches[2]).result then
+   return "??? áÇ íæÌÏ ÚÖæ ÈåĞÇ ÇáãÚÑİ."
+    end
+   local status = resolve_username(matches[2]).information
+   if not data[tostring(msg.to.id)]['mods'][tostring(status.id)] then
+    return "??? ÇáÜÚÜÖÜæ  :  @"..check_markdown(status.username).."\n??? ÇáÇíÜÏí :   ["..status.id.."] \n??? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ÊÜã ÊÜäÜÒíÜáÜå ãÜä ÇáÇÏãÜäÜíÜå  ?????"
+    else
+  data[tostring(msg.to.id)]['mods'][tostring(status.id)] = nil
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  @"..check_markdown(status.username).."\n??? ÇáÇíÜÏí :   ["..status.id.."]\n??? ÊÜã ÊÜäÜÒíÜáÜå ãÜä ÇáÇÏãÜäÜíÜå  ?????"
+      end
+end
+end
+if matches[1] == "ÑİÚ ÚÖæ ããíÒ"  and is_mod(msg) then
+   if not matches[2] and msg.reply_to_message then
+	if msg.reply.username then
+	username = "@"..check_markdown(msg.reply.username)
+    else
+	username = escape_markdown(msg.reply.print_name)
+    end
+   if data[tostring(msg.to.id)]['whitelist'][tostring(msg.reply.id)] then
+    return "??? ÇáÜÚÜÖÜæ  :  "..username.."\n??? ÇáÇíÜÏí :   ["..msg.reply.id.."]\n??? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ÚÜÖÜæ ãÜãÜíÜÒ ?????"
+    else
+  data[tostring(msg.to.id)]['whitelist'][tostring(msg.reply.id)] = username
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  "..username.."\n??? ÇáÇíÜÏí :   ["..msg.reply.id.."] \n??? ÊÜã ÊÜÑŞÜíÜÊÜå áÜíÜÕÜÈÜÍ ÚÜÖÜæ ãÜãÜíÜÒ  ?????"
+      end
+	  elseif matches[2] and matches[2]:match('^%d+') then
+  if not getUser(matches[2]).result then
+   return "??? áÇ íæÌÏ ÚÖæ ÈåĞÇ ÇáãÚÑİ."
+    end
+	  local user_name = '@'..check_markdown(getUser(matches[2]).information.username)
+	  if not user_name then
+		user_name = escape_markdown(getUser(matches[2]).information.first_name)
+	  end
+	  if data[tostring(msg.to.id)]['whitelist'][tostring(matches[2])] then
+    return "??? ÇáÜÚÜÖÜæ  :  "..user_name.."\n??? ÇáÇíÜÏí :   "..matches[2].."\n??? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ÚÜÖÜæ ãÜãÜíÜÒ ?????"
+    else
+  data[tostring(msg.to.id)]['whitelist'][tostring(matches[2])] = user_name
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  "..user_name.."\n??? ÇáÇíÜÏí :   "..matches[2].."\n??? ÊÜã ÊÜÑŞÜíÜÊÜå áÜíÜÕÜÈÜÍ ÚÜÖÜæ ãÜãÜíÜÒ  ?????"
+   end
+   elseif matches[2] and string.match(matches[2], '@[%a%d_]')  then
+  if not resolve_username(matches[2]).result then
+   return "??? áÇ íæÌÏ ÚÖæ ÈåĞÇ ÇáãÚÑİ."
+    end
+   local status = resolve_username(matches[2]).information
+   if data[tostring(msg.to.id)]['whitelist'][tostring(status.id)] then
+    return "??? ÇáÜÚÜÖÜæ  :  @"..check_markdown(status.username).."\n??? ÇáÇíÜÏí :   ["..status.id.."] \n??? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ÚÜÖÜæ ãÜãÜíÜÒ ?????"
+    else
+  data[tostring(msg.to.id)]['whitelist'][tostring(status.id)] = check_markdown(status.username)
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  @"..check_markdown(status.username).."\n??? ÇáÇíÜÏí :   ["..status.id.."] \n??? ÊÜã ÊÜÑŞÜíÜÊÜå áÜíÜÕÜÈÜÍ ÚÜÖÜæ ãÜãÜíÜÒ  ?????"
+   end
+end
+end
+if matches[1] == "ÊäÒíá ÚÖæ ããíÒ" and is_mod(msg) then
+      if not matches[2] and msg.reply_to_message then
+	if msg.reply.username then
+	username = "@"..check_markdown(msg.reply.username)
+    else
+	username = escape_markdown(msg.reply.print_name)
+    end
+   if not data[tostring(msg.to.id)]['whitelist'][tostring(msg.reply.id)] then
+    return "??? ÇáÜÚÜÖÜæ  :  "..username.."\n??? ÇáÇíÜÏí :   ["..msg.reply.id.."] \n??? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ÊÜã ÊÜäÜÒíÜáÜå ãÜä  ÇáÇÚÜÖÜÇÁ ÇáÜãÜãÜíÜÒææä   ?????"
+    else
+  data[tostring(msg.to.id)]['whitelist'][tostring(msg.reply.id)] = nil
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  "..username.."\n??? ÇáÇíÜÏí :   ["..msg.reply.id.."] \n??? ÊÜã ÊÜäÜÒíÜáÜå ãÜä ÇáÇÚÜÖÜÇÁ ÇáÜãÜãÜíÜÒææä   ?????"
+      end
+	  elseif matches[2] and matches[2]:match('^%d+') then
+  if not getUser(matches[2]).result then
+   return "??? áÇ íæÌÏ ÚÖæ ÈåĞÇ ÇáãÚÑİ."
+    end
+	  local user_name = '@'..check_markdown(getUser(matches[2]).information.username)
+	  if not user_name then
+		user_name = escape_markdown(getUser(matches[2]).information.first_name)
+	  end
+	  if not data[tostring(msg.to.id)]['whitelist'][tostring(matches[2])] then
+    return "??? ÇáÜÚÜÖÜæ  :  "..user_name.."\n??? ÇáÇíÜÏí :   "..matches[2].."\n??? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ÊÜã ÊÜäÜÒíÜáÜå ãÜä  ÇáÇÚÜÖÜÇÁ ÇáÜãÜãÜíÜÒææä   ?????"
+    else
+  data[tostring(msg.to.id)]['whitelist'][tostring(matches[2])] = nil
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  "..user_name.."\n??? ÇáÇíÜÏí :   "..matches[2].." \n??? ÊÜã ÊÜäÜÒíÜáÜå ãÜä ÇáÇÚÜÖÜÇÁ ÇáÜãÜãÜíÜÒææä   ?????"
+      end
+   elseif matches[2] and string.match(matches[2], '@[%a%d_]')  then
+  if not resolve_username(matches[2]).result then
+   return "??? áÇ íæÌÏ ÚÖæ ÈåĞÇ ÇáãÚÑİ."
+    end
+   local status = resolve_username(matches[2]).information
+   if not data[tostring(msg.to.id)]['whitelist'][tostring(status.id)] then
+    return "??? ÇáÜÚÜÖÜæ  :  @"..check_markdown(status.username).."\n??? ÇáÇíÜÏí :   ["..status.id.."] \n??? ÇäÜå ÈÜÇáÜÊÜÃßÜíÜÏ ÊÜã ÊÜäÜÒíÜáÜå ãÜä  ÇáÇÚÜÖÜÇÁ ÇáÜãÜãÜíÜÒææä   ?????"
+    else
+  data[tostring(msg.to.id)]['whitelist'][tostring(status.id)] = nil
+    save_data(_config.moderation.data, data)
+    return "??? ÇáÜÚÜÖÜæ  :  @"..check_markdown(status.username).."\n??? ÇáÇíÜÏí :   ["..status.id.."] \n??? ÊÜã ÊÜäÜÒíÜáÜå ãÜä ÇáÇÚÜÖÜÇÁ ÇáÜãÜãÜíÜÒææä   ?????"
+      end
+end
+end
+if matches[1]:lower() == "Şİá" and is_mod(msg) then
+if matches[2] == "ÇáÑæÇÈØ" then
+return lock_link(msg, data, target)
+end
+if matches[2] == "ÇáÊÇß" then
+return lock_tag(msg, data, target)
+end
+if matches[2] == "ÇáÊÚÏíá" then
+return lock_edit(msg, data, target)
+end
+if matches[2] == "ÇáßáÇíÔ" then
+return lock_spam(msg, data, target)
+end
+if matches[2] == "ÇáÊßÑÇÑ" then
+return lock_flood(msg, data, target)
+end
+if matches[2] == "ÇáÈæÊÇÊ" then
+return lock_bots(msg, data, target)
+end
+if matches[2] == "ÇáÈæÊÇÊ ÈÇáØÑÏ" then
+return lock_bots_inkick(msg, data, target)
+end
+if matches[2] == "ÇáãÇÑßÏæä" then
+return lock_markdown(msg, data, target)
+end
+if matches[2] == "ÇáæíÈ" then
+return lock_webpage(msg, data, target)
+end
+if matches[2] == "ÇáÊËÈíÊ" and is_owner(msg) then
+return lock_pin(msg, data, target)
+end
+if matches[2] == "ÇáÇÖÇİå" then
+return lock_join(msg, data, target)
+end
+end
+if matches[1]:lower() == "İÊÍ" and is_mod(msg) then
+if matches[2] == "ÇáÑæÇÈØ" then
+return unlock_link(msg, data, target)
+end
+if matches[2] == "ÇáÊÇß" then
+return unlock_tag(msg, data, target)
+end
+if matches[2] == "ÇáÊÚÏíá" then
+return unlock_edit(msg, data, target)
+end
+if matches[2] == "ÇáßáÇíÔ" then
+return unlock_spam(msg, data, target)
+end
+if matches[2] == "ÇáÊßÑÇÑ" then
+return unlock_flood(msg, data, target)
+end
+if matches[2] == "ÇáÈæÊÇÊ" then
+return unlock_bots(msg, data, target)
+end
+if matches[2] == "ÇáÈæÊÇÊ ÈÇáØÑÏ" then
+return unlock_bots_inkick(msg, data, target)
+end
+if matches[2] == "ÇáãÇÑßÏæä" then
+return unlock_markdown(msg, data, target)
+end
+if matches[2] == "ÇáæíÈ" then
+return unlock_webpage(msg, data, target)
+end
+if matches[2] == "ÇáÊËÈíÊ" and is_owner(msg) then
+return unlock_pin(msg, data, target)
+end
+if matches[2] == "ÇáÇÖÇİå" then
+return unlock_join(msg, data, target)
+end
+end
+if matches[1]:lower() == "Şİá" and is_mod(msg) then
+if matches[2] == "ÇáãÊÍÑßå" then
+return mute_gif(msg, data, target)
+end
+if matches[2] == "ÇáÏÑÏÔå" then
+return mute_text(msg ,data, target)
+end
+if matches[2] == "ÇáÕæÑ" then
+return mute_photo(msg ,data, target)
+end
+if matches[2] == "ÇáİíÏíæ" then
+return mute_video(msg ,data, target)
+end
+if matches[2] == "ÇáÕæÊ" then
+return mute_audio(msg ,data, target)
+end
+if matches[2] == "ÇáÈÕãÇÊ" then
+return mute_voice(msg ,data, target)
+end
+if matches[2] == "ÇáãáÕŞÇÊ" then
+return mute_sticker(msg ,data, target)
+end
+if matches[2] == "ÇáÌåÇÊ" then
+return mute_contact(msg ,data, target)
+end
+if matches[2] == "ÇáÊæÌíå" then
+return mute_forward(msg ,data, target)
+end
+if matches[2] == "ÇáãæŞÚ" then
+return mute_location(msg ,data, target)
+end
+if matches[2] == "ÇáãáİÇÊ" then
+return mute_document(msg ,data, target)
+end
+if matches[2] == "ÇáÇÔÚÇÑÇÊ" then
+return mute_tgservice(msg ,data, target)
+end
+if matches[2] == "ÇáÇäáÇíä" then
+return mute_inline(msg ,data, target)
+end
+if matches[2] == 'Çáßá' then
+    local close_all ={
+ mute_gif(msg, data, target),
+ mute_photo(msg ,data, target),
+ mute_audio(msg ,data, target),
+ mute_voice(msg ,data, target),
+ mute_sticker(msg ,data, target),
+ mute_forward(msg ,data, target),
+ mute_contact(msg ,data, target),
+ mute_location(msg ,data, target),
+ mute_document(msg ,data, target),
+ mute_inline(msg ,data, target),
+ lock_link(msg, data, target),
+ lock_tag(msg, data, target),
+ lock_mention(msg, data, target),
+ lock_edit(msg, data, target),
+ lock_spam(msg, data, target),
+ lock_bots(msg, data, target),
+ lock_webpage(msg, data, target),
+ mute_video(msg ,data, target),
+   }
+  return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã Şİá Çáßá  ?????',close_all
+end
+end
+if matches[1]:lower() == "İÊÍ" and is_mod(msg) then
+if matches[2] == "ÇáãÊÍÑßå" then
+return unmute_gif(msg, data, target)
+end
+if matches[2] == "ÇáÏÑÏÔå" then
+return unmute_text(msg, data, target)
+end
+if matches[2] == "ÇáÕæÑ" then
+return unmute_photo(msg ,data, target)
+end
+if matches[2] == "ÇáİíÏíæ" then
+return unmute_video(msg ,data, target)
+end
+if matches[2] == "ÇáÕæÊ" then
+return unmute_audio(msg ,data, target)
+end
+if matches[2] == "ÇáÈÕãÇÊ" then
+return unmute_voice(msg ,data, target)
+end
+if matches[2] == "ÇáãáÕŞÇÊ" then
+return unmute_sticker(msg ,data, target)
+end
+if matches[2] == "ÇáÌåÇÊ" then
+return unmute_contact(msg ,data, target)
+end
+if matches[2] == "ÇáÊæÌíå" then
+return unmute_forward(msg ,data, target)
+end
+if matches[2] == "ÇáãæŞÚ" then
+return unmute_location(msg ,data, target)
+end
+if matches[2] == "ÇáãáİÇÊ" then
+return unmute_document(msg ,data, target)
+end
+if matches[2] == "ÇáÇÔÚÇÑÇÊ" then
+return unmute_tgservice(msg ,data, target)
+end
+if matches[2] == "ÇáÇäáÇíä" then
+return unmute_inline(msg ,data, target)
+end
+ if matches[2] == 'Çáßá' then
+    local open_all ={
+ unmute_gif(msg, data, target),
+ unmute_photo(msg ,data, target),
+ unmute_audio(msg ,data, target),
+ unmute_voice(msg ,data, target),
+ unmute_sticker(msg ,data, target),
+ unmute_forward(msg ,data, target),
+ unmute_contact(msg ,data, target),
+ unmute_location(msg ,data, target),
+ unmute_document(msg ,data, target),
+ unlock_link(msg, data, target),
+ unlock_tag(msg, data, target),
+ unlock_mention(msg, data, target),
+ unlock_edit(msg, data, target),
+ unlock_spam(msg, data, target),
+ unlock_bots(msg, data, target),
+ unlock_webpage(msg, data, target),
+ unmute_video(msg ,data, target),
+ unmute_inline(msg ,data, target)
+    }
+ 
+return '??? ãÑÍÈÂ ÚÒíÒí \n??? Êã İÊÍ Çáßá  ?????',open_all
+end
+end
+  if matches[1] == 'ãäÚ' and matches[2] and is_mod(msg) then
+    return filter_word(msg, matches[2])
+  end
+  if matches[1] == 'ÇáÛÇÁ ãäÚ' and matches[2] and is_mod(msg) then
+    return unfilter_word(msg, matches[2])
+  end
+  if matches[1] == 'ÊÛííÑ ÇáÑÇÈØ' and is_mod(msg) then
+  local administration = load_data(_config.moderation.data)
+  local link = exportChatInviteLink(msg.to.id)
+	if not link then
+		return "*ÇáÈæÊ áíÓ ãäÔÆ ÇáãÌãæÚå Şã ÈÃÖÇİå ÇáÑÇÈØ ÈÃÑÓÇá* [ ÖÚ ÑÇÈØ ]"
+	else
+		administration[tostring(msg.to.id)]['settings']['linkgp'] = link.result
+		save_data(_config.moderation.data, administration)
+		return "*??? ÔßÑÃ áß ??\n??? Êã ÍİÙ ÇáÑÇÈØ ÈäÌÇÍ ?????*"
+	end
+   end
+		if matches[1] == 'ÖÚ ÑÇÈØ' and is_owner(msg) then
+		data[tostring(target)]['settings']['linkgp'] = 'waiting'
+			save_data(_config.moderation.data, data)
+return "??? ãÑÍÈÂ ÚÒíÒí\n??? ÑÌÇÆÇ ÇÑÓá ÇáÑÇÈØ ÇáÂä ?????"
+	   end
+		if msg.text then
+   local is_link = msg.text:match("^([https?://w]*.?telegram.me/joinchat/%S+)$") or msg.text:match("^([https?://w]*.?t.me/joinchat/%S+)$")
+			if is_link and data[tostring(target)]['settings']['linkgp'] == 'waiting' and is_owner(msg) then
+				data[tostring(target)]['settings']['linkgp'] = msg.text
+				save_data(_config.moderation.data, data)
+return "??? ÔßÑÃ áß ??\n??? Êã ÍİÙ ÇáÑÇÈØ ÈäÌÇÍ ?????"
+       end
+		end
+    if matches[1] == 'ÇáÑÇÈØ' and is_mod(msg) then
+      local linkgp = data[tostring(target)]['settings']['linkgp']
+      if not linkgp then
+return "??? Çæå ?? áÇ íæÌÏ åäÇ ÑÇÈØ\n??? ÑÌÇÆÇ ÇßÊÈ [ÖÚ ÑÇÈØ] ?????"
+      end
+      return "??? ÑÇÈØ ÇáãÌãæÚå  ?\n??? ÇÖÛØ åäÇ ???????\n ?? ?[{ "..escape_markdown(msg.to.title).." }]("..linkgp..")"	  
+     end
+  if matches[1] == "ÖÚ ÇáŞæÇäíä" and matches[2] and is_mod(msg) then
+    data[tostring(target)]['rules'] = matches[2]
+	  save_data(_config.moderation.data, data)
+return '??? ãÑÍÈÂ ÚÒíÒí\n??? Êã ÍİÙ ÇáŞæÇäíä ÈäÌÇÍ?????\n??? ÇßÊÈ [ ÇáŞæÇäíä ] áÚÑÖåÇ ??? '  end
+  if matches[1] == "ÇáŞæÇäíä" then
+ if not data[tostring(target)]['rules'] then
+     rules = "???? ? ãÑÍÈÃ ÚÒíÑí ???? ÇáŞæÇäíä ßáÇÊí ????\n??? ããäæÚ äÔÑ ÇáÑæÇÈØ \n??? ããäæÚ ÇáÊßáã Çæ äÔÑ ÕæÑ ÇÈÇÍíå \n??? ããäæÚ  ÇÚÇÏå ÊæÌíå \n??? ããäæÚ ÇáÊßáã ÈáØÇÆİå \n??? ÇáÑÌÇÁ ÇÍÊÑÇã ÇáãÏÑÇÁ æÇáÇÏãäíå ????"
+        else
+     rules =  "*???ÇáŞæÇäíä :*\n"..data[tostring(target)]['rules']
+      end
+    return rules
+  end
+
+  if matches[1]:lower() == 'ÖÚ ÊßÑÇÑ' and is_mod(msg) then
+			if tonumber(matches[2]) < 1 or tonumber(matches[2]) > 50 then
+				return "??? ÍÏæÏ ÇáÊßÑÇÑ ,  íÌÈ Çä Êßæä ãÇ Èíä  *[2-50]*"
+      end
+			local flood_max = matches[2]
+			data[tostring(msg.to.id)]['settings']['num_msg_max'] = flood_max
+			save_data(_config.moderation.data, data)
+    return "??? Êã æÖÚ ÇáÊßÑÇÑ : *[ "..matches[2].." ]*"
+       end
+
+		if matches[1]:lower() == 'ãÓÍ' and is_owner(msg) then
+			if matches[2] == 'ÇáÇÏãäíå' then
+				if next(data[tostring(msg.to.id)]['mods']) == nil then
+return "??? Çæå ? åäÇáß ÎØÃ ??\n??? ÚĞÑÇ áÇ íæÌÏ ÇÏãäíå áíÊã ãÓÍåã ?????"
+            end
+				for k,v in pairs(data[tostring(msg.to.id)]['mods']) do
+					data[tostring(msg.to.id)]['mods'][tostring(k)] = nil
+					save_data(_config.moderation.data, data)
+				end
+return "??? ãÑÍÈÂ ÚÒíÒí \n??? Êã ÍĞİ ÇáÇÏãäíå ÈäÌÇÍ ?????"
+         end
+			if matches[2] == 'ŞÇÆãå ÇáãäÚ' then
+				if next(data[tostring(msg.to.id)]['filterlist']) == nil then
+					return "??? ÚĞÑÇ áÇ ÊæÌÏ ßáãÇÊ ããäæÚå áíÊã ÍĞİåÇ ?????"
+				end
+				for k,v in pairs(data[tostring(msg.to.id)]['filterlist']) do
+					data[tostring(msg.to.id)]['filterlist'][tostring(k)] = nil
+					save_data(_config.moderation.data, data)
+				end
+				return "??? ãÑÍÈÂ ÚÒíÒí \n??? Êã ÍĞİ ÇáßáãÇÊ ÇáããäæÚå  ??"
+			end
+			if matches[2] == 'ÇáŞæÇäíä' then
+				if not data[tostring(msg.to.id)]['rules'] then
+return "??? Çæå ? åäÇáß ÎØÃ ??\n??? ÚĞÑÇ áÇ íæÌÏ ŞæÇäíä áíÊã ãÓÍå ?????"
+				end
+					data[tostring(msg.to.id)]['rules'] = nil
+					save_data(_config.moderation.data, data)
+return "??? ãÑÍÈÂ ÚÒíÒí \n??? Êã ÍĞİ ÇáŞæÇäíä ÈäÌÇÍ ?????"
+       end
+			if matches[2] == 'ÇáÊÑÍíÈ' then
+				if not data[tostring(msg.to.id)]['setwelcome'] then
+return "??? Çæå ? åäÇáß ÎØÃ ??\n??? ÚĞÑÇ áÇ íæÌÏ ÊÑÍíÈ áíÊã ãÓÍå ?????"
+				end
+					data[tostring(msg.to.id)]['setwelcome'] = nil
+					save_data(_config.moderation.data, data)
+return "??? ãÑÍÈÂ ÚÒíÒí \n??? Êã ÍĞİ ÇáÊÑÍíÈ ÈäÌÇÍ ?????"
+       end
+			if matches[2] == 'ÇáæÕİ' then
+        if msg.to.type == "group" then
+				if not data[tostring(msg.to.id)]['about'] then
+return "??? ÚĞÑÇ áÇ íæÌÏ æÕİ áíÊã ãÓÍå ?????"
+				end
+					data[tostring(msg.to.id)]['about'] = nil
+					save_data(_config.moderation.data, data)
+        elseif msg.to.type == "supergroup" then
+   setChatDescription(msg.to.id, "")
+             end
+return "??? ãÑÍÈÂ ÚÒíÒí \n??? Êã ÍĞİ ÇáæÕİ ÈäÌÇÍ ?????"
+		   	end
+        end
+		if matches[1]:lower() == 'ãÓÍ' and is_sudo(msg) then
+			if matches[2] == 'ÇáÇÏÇÑííä' then
+				if next(data[tostring(msg.to.id)]['owners']) == nil then
+return "??? ÚĞÑÇ áÇ íæÌÏ ãÏÑÇÁ áíÊã ãÓÍåã ?????"
+				end
+				for k,v in pairs(data[tostring(msg.to.id)]['owners']) do
+					data[tostring(msg.to.id)]['owners'][tostring(k)] = nil
+					save_data(_config.moderation.data, data)
+				end
+return "??? ãÑÍÈÂ ÚÒíÒí \n??? Êã ÍĞİ ÇáãÏÑÇÁ ÈäÌÇÍ ?????"
+			end
+     end
+if matches[1] == "ÖÚ ÇÓã" and matches[2] and is_mod(msg) then
+
+local gp_name = matches[2]
+setChatTitle(msg.to.id, gp_name)
+end
+
+if matches[1] == 'ÖÚ ÕæÑå' and is_mod(msg) then
+gpPhotoFile = "./data/photos/group_photo_"..msg.to.id..".jpg"
+     if not msg.caption and not msg.reply_to_message then
+			data[tostring(msg.to.id)]['settings']['set_photo'] = 'waiting'
+			save_data(_config.moderation.data, data)
+return "??? ãÑÍÈÂ ÚÒíÒí\n??? ÑÌÇÆÇ ÇáÇä ÇÑÓá ÇáÕæÑå  ????"
+     elseif not msg.caption and msg.reply_to_message then
+if msg.reply_to_message.photo then
+if msg.reply_to_message.photo[3] then
+fileid = msg.reply_to_message.photo[3].file_id
+elseif msg.reply_to_message.photo[2] then
+fileid = msg.reply_to_message.photo[2].file_id
+   else
+fileid = msg.reply_to_message.photo[1].file_id
+  end
+downloadFile(fileid, gpPhotoFile)
+sleep(1)
+setChatPhoto(msg.to.id, gpPhotoFile)
+    data[tostring(msg.to.id)]['settings']['set_photo'] = gpPhotoFile
+    save_data(_config.moderation.data, data)
+    end
+  return "??? ãÑÍÈÂ ÚÒíÒí\n??? Êã ÊÚíä ÕæÑå ÇáãÌãæÚå ???? "
+     elseif msg.caption and not msg.reply_to_message then
+if msg.photo then
+if msg.photo[3] then
+fileid = msg.photo[3].file_id
+elseif msg.photo[2] then
+fileid = msg.photo[2].file_id
+   else
+fileid = msg.photo[1].file_id
+  end
+downloadFile(fileid, gpPhotoFile)
+sleep(1)
+setChatPhoto(msg.to.id, gpPhotoFile)
+    data[tostring(msg.to.id)]['settings']['set_photo'] = gpPhotoFile
+    save_data(_config.moderation.data, data)
+    end
+  return "??? ãÑÍÈÂ ÚÒíÒí\n??? Êã ÊÚíä ÕæÑå ÇáãÌãæÚå ???? "
+		end
+  end
+if matches[1] == "ãÓÍ ÇáÕæÑå" and is_mod(msg) then
+deleteChatPhoto(msg.to.id)
+  return "??? Êã ÍĞİ ÕæÑå *ÇáãÌãæÚå* ???? "
+end
+  if matches[1] == "ÖÚ æÕİ" and matches[2] and is_mod(msg) then
+     if msg.to.type == "supergroup" then
+   setChatDescription(msg.to.id, matches[2])
+       data[tostring(msg.to.id)]['about'] = matches[2]
+	  save_data(_config.moderation.data, data)
+    elseif msg.to.type == "group" then
+    data[tostring(msg.to.id)]['about'] = matches[2]
+	  save_data(_config.moderation.data, data)
+     end
+     return "??? Êã æÖÚ ÇáæÕİ ÈäÌÇÍ?????"
+	 end
+  if matches[1] == "ÇáæÕİ" then
+ if not data[tostring(msg.to.id)]['about'] then
+     about =  "??? áÇ íæÌÏ æÕİ ááãÌãæÚå"
+        else
+     about = "??? æÕİ ÇáãÌãæÚå :*\n"..data[tostring(chat)]['about']
+      end
+    return about
+  end
+--------------------- Welcome -----------------------
+if matches[1] == "ÊÔÛíá" and is_mod(msg) then
+	    local target = msg.to.id
+        if matches[2] == "ÇáÑÏæÏ" then
+return unlock_replay(msg, data, target)
+end
+
+if matches[2] == "ÇáÇíÏí" then
+return unlock_id(msg, data, target)
+end
+
+if matches[2] == "ÇáÊÑÍíÈ" then
+			welcome = data[tostring(msg.to.id)]['settings']['welcome']
+		if welcome == "yes" then
+return "??? _ãÑÍÈÂ ÚÒíÒí_\n??? _ÊÔÛíá ÇáÊÑÍíÈ ÔÛÇá ãÓÈŞÇğ_ ?????"
+			else
+		data[tostring(msg.to.id)]['settings']['welcome'] = "yes"
+	    save_data(_config.moderation.data, data)
+return "??? _ãÑÍÈÂ ÚÒíÒí_\n??? _Êã ÊÔÛíá ÇáÊÑÍíÈ_ ?????"
+		end
+	end
+	if matches[2] == "ÇáÊÍĞíÑ" then
+			lock_woring = data[tostring(msg.to.id)]['settings']['lock_woring']
+		if lock_woring == "yes" then
+return "??? _ãÑÍÈÂ ÚÒíÒí_\n??? _ÊÔÛíá ÇáÊÍĞíÑ ÔÛÇá ãÓÈŞÇğ_ ?????"
+			else
+		data[tostring(msg.to.id)]['settings']['lock_woring'] = "yes"
+	    save_data(_config.moderation.data, data)
+return "??? _ãÑÍÈÂ ÚÒíÒí_\n??? _Êã ÊÔÛíá ÇáÊÍĞíÑ_ ?????"
+		end
+		end
+		end
+if matches[1] == "ÇíŞÇİ" and is_mod(msg) then
+	    local target = msg.to.id
+        if matches[2] == "ÇáÑÏæÏ" then
+        return lock_replay(msg, data, target)
+        end
+         if matches[2] == "ÇáÇíÏí" then
+return lock_id(msg, data, target)
+end
+
+         if matches[2] == "ÇáÊÑÍíÈ" then
+    welcome = data[tostring(msg.to.id)]['settings']['welcome']
+	if welcome == "no" then
+	return "??? _ãÑÍÈÂ ÚÒíÒí_\n??? _ÇáÊÑÍíÈ ÈÇáÊÃßíÏ ãÊæŞİ_ ?????"
+			else
+		data[tostring(msg.to.id)]['settings']['welcome'] = "no"
+	    save_data(_config.moderation.data, data)
+return "??? _ãÑÍÈÂ ÚÒíÒí_\n??? _Êã ÇíŞÇİ ÇáÊÑÍíÈ_ ?????"
+			end
+end
+
+      if matches[2] == "ÇáÊÍĞíÑ" then
+    lock_woring = data[tostring(msg.to.id)]['settings']['lock_woring']
+	if lock_woring == "no" then
+	return "??? _ãÑÍÈÂ ÚÒíÒí_\n??? _ÇáÊÍĞíÑ ÈÇáÊÃßíÏ ãÊæŞİ_ ?????"
+			else
+		data[tostring(msg.to.id)]['settings']['lock_woring'] = "no"
+	    save_data(_config.moderation.data, data)
+return "??? _ãÑÍÈÂ ÚÒíÒí_\n??? _Êã ÇíŞÇİ ÇáÊÍĞíÑ_ ?????"
+			end
+	end
+	end
+
+	if matches[1] == "ÖÚ ÇáÊÑÍíÈ" and matches[2] and is_mod(msg) then
+		data[tostring(msg.to.id)]['setwelcome'] = matches[2]
+	    save_data(_config.moderation.data, data)
+		return "??? _Êã æÖÚ ÇáÊÑÍíÈ ÈäÌÇÍ ßáÇÊí ????_\n*"..matches[2].."*\n\n??? _ãáÇÍÙå_\n??? _ÊÓÊØíÚ ÇÖåÇÑ ÇáŞæÇäíä ÈæÇÓØå _ ? *{rules}*  \n??? _ÊÓÊØíÚ ÇÖåÇÑ ÇáÇÓã ÈæÇÓØå_ ? *{name}*\n??? _ÊÓÊØíÚ ÇÖåÇÑ ÇáãÚÑİ ÈæÇÓØå_ ? *{username}*"
+	end
+if matches[1] == "ÇáÊÑÍíÈ"  and is_mod(msg) then
+		if data[tostring(msg.to.id)]['setwelcome']  then
+	    return data[tostring(msg.to.id)]['setwelcome']  
+	    else
+		return "???  _ãÑÍÈÂ ÚÒíÒí_\n??? äæÑÊ ÇáãÌãæÚå \n"
+	end
+end
+if matches[1]== 'ÑÓÇÆáí' or matches[1]=='ÑÓÇíáí' then
+local msgs = tonumber(redis:get('msgs:'..msg.from.id..':'..msg.to.id) or 0)
+return '?? ? ÚÏÏ ÑÓÇÆáß : `'..msgs..'` ÑÓÇáÉ ???? \n\n'
+end
+
+
+----------------End Msg Matches--------------
+end
+local function pre_process(msg)
+-- print(serpent.block(msg, {comment=false}))
+local data = load_data(_config.moderation.data)
+ if data[tostring(msg.to.id)] and data[tostring(msg.to.id)]['settings'] and data[tostring(msg.to.id)]['settings']['set_photo'] == 'waiting' and is_mod(msg) then 
+gpPhotoFile = "./data/photos/group_photo_"..msg.to.id..".jpg"
+    if msg.photo then
+  if msg.photo[3] then
+fileid = msg.photo[3].file_id
+elseif msg.photo[2] then
+fileid = msg.photo[2].file_id
+   else
+fileid = msg.photo[1].file_id
+  end
+downloadFile(fileid, gpPhotoFile)
+sleep(1)
+setChatPhoto(msg.to.id, gpPhotoFile)
+    data[tostring(msg.to.id)]['settings']['set_photo'] = gpPhotoFile
+    save_data(_config.moderation.data, data)
+     end
+		send_msg(msg.to.id, "??? ãÑÍÈÂ ÚÒíÒí\n??? Êã ÊÚíä ÕæÑå ÇáãÌãæÚå ???? ", msg.id, "md")
+  end
+
+ if msg.newuser then
+	if data[tostring(msg.to.id)]  then
+		wlc = data[tostring(msg.to.id)]['settings']['welcome']
+		if wlc == "yes" and tonumber(msg.newuser.id) ~= tonumber(bot.id) and msg.newuser.username ~=nil and string.sub(msg.newuser.username:lower(), -3) ~= 'bot' and settings.lock_join == "no" then
+    if data[tostring(msg.to.id)]['setwelcome'] then
+     welcome = data[tostring(msg.to.id)]['setwelcome']
+      else
+	welcome = "??? ãÑÍÈÂğ ÚÒíÒí\n??? äæÑÊ ÇáãÌãæÚå \n"
+
+end
+ if data[tostring(msg.to.id)]['rules'] then
+rules = data[tostring(msg.to.id)]['rules']
+else
+     rules = "??? ãÑÍÈÃ ÚÒíÑí ???? ÇáŞæÇäíä ßáÇÊí ????\n??? ããäæÚ äÔÑ ÇáÑæÇÈØ \n??? ããäæÚ ÇáÊßáã Çæ äÔÑ ÕæÑ ÇÈÇÍíå \n??? ããäæÚ  ÇÚÇÏå ÊæÌíå \n??? ããäæÚ ÇáÊßáã ÈáØÇÆİå \n??? ÇáÑÌÇÁ ÇÍÊÑÇã ÇáãÏÑÇÁ æÇáÇÏãäíå ??\n??"
+end
+if msg.newuser.username then
+user_name = "@"..check_markdown(msg.newuser.username)
+else
+user_name = ""
+end
+		welcome = welcome:gsub("{rules}", rules)
+		welcome = welcome:gsub("{name}", escape_markdown(msg.newuser.print_name))
+		welcome = welcome:gsub("{username}", user_name)
+		welcome = welcome:gsub("{gpname}", msg.to.title)
+		send_msg(msg.to.id, welcome, msg.id, "md")
+        end
+		end
+	end
+ if msg.newuser then
+ if msg.newuser.id == bot.id then
+   local rsala = [[??? ãÑÍÈÇ ÇäÇ ÈæÊ ÇÓãí ]].. _config.botname..[[ ??
+??? ÇÎÊÕÇÕí ÍãÇíå ßÑæÈÇÊ
+??? ãä ÇáÓÈÇã æÇáæÓÇÆØ æÇáÊßÑÇÑ æÇáÎ ...
+??? áÊİÚíá ÇáÈæÊ ÑÇÓá ÇáãØæÑ ]]
+	sendPhoto(msg.to.id, "data/photos/TH3BOSS.jpg", rsala, msg.id)
+end
+end
+end
+return {
+  patterns = {
+"^(ÊİÚíá)$",
+"^(ÊÚØíá)$",
+"^(ÑİÚ ÇáãÏíÑ)$",
+"^(ÊäÒíá ÇáãÏíÑ)$",
+"^(ÑİÚ ÇáãÏíÑ) (@[%a%d%_]+)$",
+"^(ÊäÒíá ÇáãÏíÑ) (@[%a%d%_]+)$",
+"^(ÑİÚ ÇáãÏíÑ) (%d+)$",
+"^(ÊäÒíá ÇáãÏíÑ) (%d+)$",
+"^(ÑİÚ ÇÏãä)$",
+"^(ÊäÒíá ÇÏãä)$",
+"^(ÑİÚ ÇÏãä) (@[%a%d%_]+)$",
+"^(ÊäÒíá ÇÏãä) (@[%a%d%_]+)$",
+"^(ÑİÚ ÇÏãä) (%d+)$",
+"^(ÊäÒíá ÇÏãä) (%d+)$",
+"^(ÑİÚ ÚÖæ ããíÒ)$",
+"^(ÊäÒíá ÚÖæ ããíÒ)$",
+"^(ÑİÚ ÚÖæ ããíÒ) (@[%a%d%_]+)$",
+"^(ÊäÒíá ÚÖæ ããíÒ) (@[%a%d%_]+)$",
+"^(ÑİÚ ÚÖæ ããíÒ) (%d+)$",
+"^(ÊäÒíá ÚÖæ ããíÒ) (%d+)$",
+"^(ÇáÇÚÖÇÁ ÇáããíÒíä)$",
+"^(Şİá) (.*)$",
+"^(İÊÍ) (.*)$",
+"^(ÇáÍãÇíå)$",
+"^(ãäÚ) (.*)$",
+"^(ÇáÛÇÁ ãäÚ) (.*)$",
+"^(ŞÇÆãå ÇáãäÚ)$",
+"^(ÇáÇÏÇÑííä)$",
+"^(ÇáÇÏãäíå)$",
+"^(ÖÚ ÇáŞæÇäíä) (.*)$",
+"^(ÇáŞæÇäíä)$",
+"^(ÖÚ ÑÇÈØ)$",
+"^(ÇáÑÇÈØ)$",
+"^(ÊÛííÑ ÇáÑÇÈØ)$",
+"^(ÖÚ ÕæÑå)$",
+"^(ãÓÍ ÇáÕæÑå)$",
+"^(ÇíÏí)$",
+"^(ÇíÏí) (@[%a%d%_]+)$",
+"^(ãÓÍ) (.*)$",
+"^(ÖÚ ÇÓã) (.*)$",
+"^(ÇáÊÑÍíÈ)$",
+"^(ÊÔÛíá) (.*)$",
+"^(ÇíŞÇİ) (.*)$",
+"^(ÖÚ ÇáÊÑÍíÈ) (.*)$",
+"^(ÊËÈíÊ)$",
+"^(ÇáÛÇÁ ÇáÊËÈíÊ)$",
+"^(ÇáæÕİ)$",
+"^(ÑÓÇÆáí)$",
+"^(ÑÓÇíáí)$",
+"^(ÖÚ æÕİ) (.*)$",
+"^(ÖÚ ÊßÑÇÑ) (%d+)$",
+"^([https?://w]*.?telegram.me/joinchat/%S+)$",
+"^([https?://w]*.?t.me/joinchat/%S+)$"
+},
+  run = moody,
+  pre_process = pre_process
+}

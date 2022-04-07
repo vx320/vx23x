@@ -1,0 +1,463 @@
+
+local function run(msg, matches) 
+
+
+local w = matches[1]
+local ww = matches[2]
+local r3 = matches[3]
+local r4 = matches[4]
+local name_user = string.sub(msg.from.first_name:lower(),0,60) 
+local data = load_data(_config.moderation.data)
+if msg.from.username then
+usernamex = "@"..(msg.from.username or "---")
+else
+usernamex = "? ãÇ ãÓæí  ???? "
+end
+
+if matches[1] == _config.botname..' ÛÇÏÑ' and is_sudo(msg) and msg.to.type == "supergroup" or msg.to.type == "group" then
+send_msg(msg.to.id,"??? Êã ÍĞİ ÈíÇäÇÊ ÇáãÌãæÚÉ \n???  Óæİ ÇÛÇÏÑ ÈÇí ????" )
+botrem(msg)
+end
+--------------------[Test Bot]----------------------------
+if w =="ÊíÓÊ" then
+return "???? ÇáÈæÊ ÔÜÛÜÜÇá ??"
+elseif w == "ÇÓãí" then
+return  "\n" ..msg.from.first_name.."\n" 
+elseif w == "ãÚÑİí" then
+return  usernamex
+elseif w == "ÑŞãí" then
+return  "\n"..(msg.from.phone or "áÇíæÌÏ").."\n" 
+elseif w == "ÇíÏíí" then
+return  "\n"..msg.from.id.."\n" 
+elseif w =="ÕæÑÊí" then
+local status = getUserProfilePhotos(msg.from.id, 0, 0)
+if status.result.total_count ~= 0 then
+	sendPhotoById(msg.to.id, status.result.photos[1][1].file_id, msg.id, '')
+else
+return '???áÇ ÊæÌÏ ÕæÑÉ İí ÈÑæİÇíáß !!! '
+end
+elseif w=="ÇÑíÏ ÑÇÈØ ÇáÍĞİ" or w=="ÇÑíÏ ÑÇÈØ ÍĞİ" or w=="ÑÇÈØ ÍĞİ" or w=="ÑÇÈØ ÇáÍĞİ" then
+return [[
+??? ÑÇÈØ ÍĞİ ÍÜÓÇÈ ÇáÊíáíÑÇã ?
+??? áÊÊäÏã İ?Ñ ŞÈá ?áÔí ??
+??? ÈÇáÊÜæİíÜŞ ÚÒíÒí ...
+
+???Ü  https://telegram.org/deactivate
+]]  
+elseif w== 'ÇíÏí' and msg.to.type == 'private' then
+local iid = "??? ÇíÏí ÇáÈæÊ :` "..our_id.. "`\n??? ÇíÏí ÍÓÇÈß :` "..msg.from.id.. "`\n??? ŞäÇå ÇáÜÓÜæÑÓ : @lBOSSl"
+send_msg(msg.from.id, iid,nil,'md')
+
+end
+------------[lock and unlock reply in pv ]---------
+    
+if(msg.to.type == "private") then
+if w and msg.reply_to_message and msg.reply.fwd_from and is_sudo(msg) then
+send_msg(msg.reply.fwd_from.id,w)
+send_msg(msg.from.id,'??? Êã ÇÑÓÇá ÑÓÇáÊß ?? ')
+
+elseif not is_sudo(msg) and msg.from.id ~= our_id and w~="/start"  then
+fwd_msg(sudo_id,msg.from.id,msg.id)
+send_msg(msg.from.id,'??? Êã ÇÑÓÇá ÑÓÇáÊß ?? \n??? Óæİ íÑÏ Úáíß ÇáãØæÑ İí ÇŞÑÈ æŞÊ ??\n',msg.id)
+end
+end
+    
+if not (data[tostring(msg.to.id)] or is_silent_user(msg.from.id, msg.to.id)) then return end
+
+--------------[data function to save rdod ]---------------
+if data[tostring(msg.to.id)] then
+local settings = data[tostring(msg.to.id)]['settings'] 
+if data[tostring(msg.to.id)]['settings']['replay'] then
+ lock_reply = data[tostring(msg.to.id)]['settings']['replay'] 
+end end
+
+---------------[End Function data] -----------------------
+ if w=="ÑÏ" then
+     
+if ww == 'ãÓÍ Çáßá' then
+  if not is_owner(msg) then return"?? ááãÏÑÇÁ İŞØ ! ????" end
+if next(data[tostring(msg.to.id)]['replay']) == nil then
+return  " ÚĞÑÇğ ??".. ":{" ..msg.from.first_name.. "}:".."\n".."\n".." ??ŞÇÆãÉ ÇáÑÏæÏ İÇÑÛÉ ÈÇáİÚá ???? "
+else
+for k,v in pairs(data[tostring(msg.to.id)]['replay']) do
+data[tostring(msg.to.id)]['replay'][tostring(k)] = nil
+save_data(_config.moderation.data, data)
+end
+    return "?? Êã ãÓÍ ßá ÇáÑÏæÏ ??"
+end
+end
+
+  if ww == 'ÇÖİ' then
+    if not is_owner(msg) then return"?? ááãÏÑÇÁ İŞØ ! ????" end
+ data[tostring(msg.to.id)]['replay'][r3] = r4
+save_data(_config.moderation.data, data)
+ return '('..r3..')\n  ?? Êã ÇÖÇİÊ ÇáÑÏ ?? '
+ 
+elseif ww == 'ãÓÍ' then
+  if not is_owner(msg) then return"?? ááãÏÑÇÁ İŞØ ! ????" end
+if not data[tostring(msg.to.id)]['replay'][r3] then
+return '??åĞÇ ÇáÑÏ áíÔ ãÖÇİ İí ŞÇÆãå ÇáÑÏæÏ ????'
+else
+data[tostring(msg.to.id)]['replay'][r3] = nil
+save_data(_config.moderation.data, data)
+return '('..r3..')\n  ?? Êã ãÓÍ ÇáÑÏ ?? '
+end
+end
+end
+
+  if w == 'ÇáÑÏæÏ' then
+if next(data[tostring(msg.to.id)]['replay']) ==nil then
+return '?? áÇíæÌÏ ÑÏæÏ ãÖÇİå ÍÇáíÇ ??'
+else
+local i = 1
+local message = '??? ÑÏæÏ ÇáÈæÊ İí ÇáãÌãæÚå  ????\n\n'
+for k,v in pairs(data[tostring(msg.to.id)]['replay']) do
+message = message ..i..' - '..k..' [[' ..v.. ']] \n'
+i = i + 1
+end
+return message
+end
+
+  end
+
+
+--------------------------------------
+
+if lock_reply =="yes" and  data[tostring(msg.to.id)] then
+
+if  msg.to.type == "supergroup" or msg.to.type == "group" then
+----------------------
+local su = {
+"äÚã ÍÈíÈí ÇáãØæÑ ???",
+"íÇÈÚÏ ÑæÍ ".._config.botname.." ????",
+"åáÇ ÈãØæÑí ÇáÚÔŞ ÃãÑäí"
+  }
+local  ss97 = {
+"åÇ ÍíÇÊí??",
+"Úíæäå ?? æÎÔãå ????æÇĞÇäå????",
+"ÈÇŞí æíÊãÏÏ ??",
+"åÇ ÍÈí ??",
+"åÇ ÚãÑí ??",
+"ÇÌíÊ ÇÌíÊ ßÇİí áÊÕíÍ ????",
+"åíÇÊäí ÇÌíÊ ????",
+"äÚã ÍÈí ??",
+"åæå ÛíÑ íÓßÊ ÚÇÏ åÇ ÔÊÑíÏ ??",
+"ÇÍÌí ÈÓÑÚå ÔÊÑíÏ ??",
+"åÇ íÇ ßáÈí ??",
+"åã ÕÇÍæ Úáíå ÑÇÍ ÇÈÏá ÇÓãí ãä æÑÇßã ??",
+"áß İÏÇß ".._config.botname.." ÍÈíÈí ÇäÊ ÇãæææÍ ??",
+"ÏÇ ÇÔÑÈ ÌÇí ÊÚÇá ÛíÑ æßÊ ??",
+"ßæá ÍÈíÈí ÃãÑäí ??",
+"ÇÍÌí İÖäí ÔÑÇíÏ æáÇ ÇÕíÑ ÖÑíİ æÏßáí ÌÑÇíÏ áæ ãÌáÇÊ ÊÑå ÈÇíÎå ????",
+"ÇÔÊÚáæ Çåá ".._config.botname.." ÔÊÑíÏ ??",
+"Èæææææææææ ?? åÇ åÇ İÒíÊ ÔİÊß ÔİÊß áÇ ÊÍáİ ??",
+"ØÇáÚ ããæÌæÏ ??",
+"åÇÇÇ Ôäææ Çßæ ÍÇÊå ÈÇáßÑæÈ æÕÍÊ Úáíå  ????",
+"ÇäÊ ãæ ŞÈá íæãíä ÛáØÊ Úáíå¿  ??",
+"ÑÇÌÚ ÇáãßÊÈ ÍÈíÈí ÚÈÇáß ".._config.botname.." Óåá ÊÍÌí æíÇ ??",
+"íÇÚíæä ".._config.botname.." ÃãÑäí ??",
+"áß ÏÈÏá ãáÇÈÓí ÇØáÚ ÈÑÇÇÇÇÇ ???? äÇÓ ãÊÓÊÍí",
+"ÓæíÊ åæÇí ÔÛáÇÊ ÓÎíİå ÈÍíÇÊí ÈÓ ÚãÑí ãÕÍÊ Úáì æÇÍÏ æßáÊáå ÇäÌÈ ??",
+"ãÔÛæá æíÇ ÖáÚÊí  ??",
+"ãÇÒÇ ÊÑíÏ ãäå ????",
+
+}
+local bs = {
+"ãÇÈæÓ ????",
+"ÇÂÂÂã?ÜÜ.????ÜÜæ?æ?æ?Â?Â?Í???ÚÓÓÜá??",
+"ÇáæÌå ãíÓÇÚÏ ???",
+"ããããÍ??ÍÍÍ??????",
+}
+local ns = {
+"?? åÜÜáÜÜ?el?oææÇÊ??ÚãÜ°??°ÜÜÑí????",
+"åúÜñÀñÀñ????ÀñÜ?ñ?ÜúáæõøÇÊ†????",
+"åáÇææ99æææÇÊ äæÑÊ/í ????",
+"åáææÇÊ ????",
+}
+local sh = {
+"ÇåáÇ ÚÒíÒí ÇáãØæÑ ????",
+"åáæÇÊ . äæÑÊ ãØæÑí ??",
+}
+local lovs =  "ÇãæÊ Úáíß ÍíÇÊí  ????"
+local  lovm = {
+"ÇßÑåß ??????",
+"Ïí ??????",
+"ÇÚÔßß/Ì ãÍ ????",
+"Çí ÇÍÈß/Ì ????",
+"ãÇÍÈß/Ì ????",
+"ÇãÜÜÜæÊ İíß ??",
+"ÇĞÇ ßÊáß/Ì ÇÍÈß/Ì ÔÑÇÍ ÊÓÊİÇÏ/íä ????",
+"æáí ãÇÍÈß/Ì ????",
+}
+local thb = {
+"ÇãæÊ Úáíå-å ????",
+"İÏíÊå-å ????",
+"áÇ ãÇÍÈå-å ????",
+"ÇßÑåå ????",
+"íííÚ ??????",
+"ãÇÏÑí Çİ?ÀÀÀÑ????"
+}
+local song = {
+"Úãí íÈæ ÇáÈÇÑ ?????? \nÕÈáí áÈáÈí ÊÑì Çäí ÓßÑÇä ?? \n æÕÇíÑ ÚÕÈí ?? \nÇäå æíÇÌ íã ÔÇãå ?? \næÇäå æíÜÜÜÜÇÌ íã ÔÇãå  ÔÏ ÔÏ  ???????? \nÚÏßã ÓØÍ æÚÏäå ÓØÍ ?? \n äÊÛÇÒá áÍÏ ÇáÕÈÍ ?? \n Çäå æíÇÌ íã ÔÇãå ?? \n æÇäå æíÇÌ İÎÑíå æÇäå æíÇÌ ÍãÏíå ??????\n ",
+"Çí ãæ ßÏÇãß ãÛäí ŞÏíã ???? åæå ?? ÇäÜ?öÜ?Ü?öÜ?Üö?íÜöõÜñöÀ??? ????? ???  ÑÈí ßÇãÒ æ Êßáí Ûäíáí ?????? ÂÅÑ?ÍõÜ?ÜÀ?  ??ÃäÜÜ??ÜÜÇÇÇÇÇã??  ÇÔÑİ ÊÇáí æßÊ íÑÏæäí ÇÛäí ??????",
+"áÇ ÊÙÑÈäí áÇ ÊÙÑÈ ???? ßÓÑÊ ÇáÎíÒÇÑÇäå???? ÕÇÑáí Óäå æÓÊ ÇÔåÑ???? ãä ÙÑÈÊß æÌÚÇäå????",
+"ãæÌæÚ ßáÈí??æÇáÊÚÈ ÈíÉ??ãä ÇÈÇæÚ Úáì ÑæÍí??íäßÓÑ ßáÈí Úáíå??",
+"ÇíÇãí æíÇåÇ??ÇÊãäÇ ÇäÓÇåÇ??ãÊäÏã Çäí Ííá??íã ÛíÑí åíå??ÊÖÍß??Úáíå??ãŞåæÑ ÇäÇã Çááíá??ßÇÚÏ ÇãÓÍ Èá ÑÓÇÆá??æÌÇä ÇÔæİ ßá ÑÓÇíáåÇ??æÈÌíÊ åæÇíå??ÔİÊ ÇÍÈß??æÇäí ãä Ïæäß ÇãæÊ??æÔİÊ æÇÍÏ ??ÕÇÑ åÓå æíÇíÉ??Çäí ÑÇíÏåÇ ÚãÑ ÚãÑ ÊÚÑİäí ßá Òíä?? æãÇÑÏÊ áÇ ãÕáÍÉ æáÇÛÇíå??æÇááå ãÇİÏ íæã ÈÇíÓåÇ??ÎÇİ ÊØáÚ??ÇáÈæÓå??æÊÌíåÇ ÍÌÇíå???",
+ "??ÕæÊí ÈÚÏ ãÊ ÓãÚå?íÇá ÑÇíÍ ÈáÇ ÑÌÚÉ??ÈÒæÏß äÒáÊ ÇáÏãÚÉ ĞÇß Çáíæã??íÇá ÍÈíÊáß ËÇäí?ÑæÍ æíÇå æÖá ÚÇäí??íæã ÇÓæÏ ÚáíÉ Çäí?? ĞÇß Çáíæã??ÊÈÇåÇ ÈÑæÍß æÇÖÍß??áÇä ÈÌíÊáí Úíäí???? æÇİÑÇÍ íÇÈÚÏ ÑæÍí??Îá ÇáÍÑßÉ ÊÌæíäí????ÕæÊí ÈÚÏ ãÊÓãÚÉ???",
+ 
+ 
+}
+
+----------------------------------------------
+if is_sudo(msg) and w == _config.botname and not ww then 
+return  su[math.random(#su)]  
+elseif not is_sudo(msg) and w == _config.botname and not ww then 
+return  ss97[math.random(#ss97)]  
+elseif w == "ßæá" and ww then
+if string.len(ww) > 60 then return "??? ãÇ ÇßÏÑ Çßæá ÇßËÑ ãä 60 ÍÑİ ????" end
+ send_msg(msg.to.id, '<code>'..ww..'</code>', nil, 'html')
+elseif w == "ßáå" and ww then
+if string.len(ww) > 60 then return "??? ãÇ ÇßÏÑ Çßáå ÇßËÑ ãä 60 ÍÑİ ????" end
+if msg.reply_id then
+ send_msg(msg.to.id, '<code>'..ww..'</code>',msg.reply_id, 'html')
+end
+elseif w== _config.botname and ww == "ÑÒáå" and r3 and is_sudo(msg) then
+if msg.reply_id then
+send_msg(msg.to.id, 'Çæß ÓíÏí ????', msg.id, 'html')
+send_msg(msg.to.id, 'íÇ æá Ôæ ØÇáÚÉ Úíäß?? ãä ÇáÈäÇÊ ãæ??æ åã ÕÇíÑáß áÓÇä ÊÍÌí??ÇÔæ ÊÚÇá????ÕíÑ ÍÈÇÈ ãÑÉ ËÇäíÉ ÊÑÉÉ ...??æ áÇ ÊÎáíäí ÇáÈÓß ÚãÇãÉ æ ÇÊİá Úáíß???',msg.reply_id, 'html')
+end
+elseif w == "ÈæÓ" and ww then 
+if msg.reply_id then
+send_msg(msg.to.id, bs[math.random(#bs)] , msg.reply_id ,'html')  
+else
+send_msg(msg.to.id, "?? æíäå Èáå Óæíáå ÑÏ ????", nil ,'html')
+end
+elseif w == "ÊÍÈ" and ww then
+return  thb[math.random(#thb)] 
+elseif is_sudo(msg) and w =="åáæ" then
+return  sh[math.random(#sh)]  
+elseif not is_sudo(msg) and w =="åáæ" then
+return  ns[math.random(#ns)]  
+elseif is_sudo(msg) and w == "ÇÍÈß" then
+return  lovs
+elseif is_sudo(msg) and w == "ÊÍÈäí" or w=="ÍÈß"  then
+return  lovs
+elseif not is_sudo(msg) and w == "ÇÍÈß" or w=="ÍÈß" then
+return  lovm[math.random(#lovm)]  
+elseif not is_sudo(msg) and w == "ÊÍÈäí" then
+return  lovm[math.random(#lovm)]  
+elseif w== "Ûäí" or w=="Ûäíáí" then
+return  song[math.random(#song)] 
+elseif w=="ÇÊİá" or w=="Êİá" then
+if is_mod(msg) then return 'ÎÊİææææææææææ??????' else return "?? ÇäÌÈ ãÇ ÇÊİá ÚíÈ ??????" end
+elseif w== "Êİ" then
+return  "ÚíÈ ÇÈäí/ÈÊí ÇÊİá/í ÇßÈÑ ãäåÇ ÔæíÉ ????"
+elseif w== "Ôáæäßã" or w== "Ôáæäß" or w== "Ôæäß" or w== "Ôæäßã"   then
+return  "ÇÍÓÜÜä ãÜÜä ÇäÊåÜÜÜÜÀ ÔÜÜáæäÜÜÜß ÔÜÜÎÜÜÈÜÇÑß íÜÜÜæá ã?ÜÜÜÜÔÊÜÜÜÇŞÜÜÜáß ÔÜÜæ ãÇßÜÜÜæ ????"
+elseif w== "ÕÇßå"  then
+return  "Çæææíáí íÇÈå ???? ÏÒáí ÕæÑÊåå ????"
+elseif w== "æíäß"  then
+return   "ÏæÑ ÈßáÈß æÊáßÇäí ??????"
+elseif w== "ãäæÑíä"  then
+return  "ãä äæÑß ÚãÑí ????"
+elseif w== "åÇí"  then
+return  "åÇíÇÊ ÚãÑí ????"
+elseif w== "??"  then
+return  "İÏíÊ ÇáÎÌæá ?? ??"
+elseif w== "??"  then
+return  "áÊÈÌí ÍíÇÊí ??"
+elseif w== "??"  then
+return  "áÊÈÌí ÍíÇÊí ????"
+elseif w== "ãäæÑ"  then
+return  "äöúÜöúÜÜÜöú([??])öúÜÜÜÜğöÜğğúÜÜÜöúÜöúÜöúÜæÑöúßöú"
+elseif w== "??" and not is_sudo then
+return  "ÔÈíß-Ì Úãæ ??"
+elseif w== "ãÍ"  then
+return  "ãÍÇÊ ÍíÇÊí???"
+elseif w== "ÔßÑÇ" or w== "ËßÑÇ" then
+return  "{ •• ÇáÜø~ÜÚÜİæ •• }"
+elseif w== "ÇäÊå æíä"  then
+return  "ÈÇáÜÜÈÜÜ??ÜÜíÜÜÊ"
+elseif w== "??"  then
+return  " íóãÜå?? ÅÂáõÍÜÜ?ÜÜÈ íóãÜå?? ????"
+elseif w== "ÇßÑåß"  then
+return  "Ïíáå Ôáæä ÇØíŞ ÎáŞÊß Çäí????????"
+elseif w== "ÇÑíÏ ÇßÈá"  then
+return  "ÎÎ Çäí åã ÇÑíÏ ÇßÈá ŞÇÈá ÑÈí æÍÏ?????"
+elseif w== "ÈÇí" or w=="ÈÇÇí" or w=="ÈÇÇÇí" or w=="ÈÇÇÇÇí" then
+return  "ÈÇíÇÊ ÍíÇÊí ?? " ..name_user.."\n"
+elseif w== "ÖæÌå"  then
+return  "Ôí ÇßíÏ ÇáßÈá ãÇßæ ?? áæ ÈÚÏß/Ì ãÇÒÇÍİ/É ????"
+elseif w== "ÇÑæÍ ÇÕáí"  then
+return  "ÇäÊå ÍÇİÙ ÓæÑå ÇáİÇÊÍÉ?????"
+elseif w== "ÕÇß"  then
+return  "ÒÇÍİå ?? ãäæ åĞÇ ÏÒíáí ÕæÑåå"
+elseif w== "ÇÌíÊ" or w=="Çäí ÇÌíÊ" then
+return  "ßúÜñÀñÀñ????ÜÀñæá ÇáÜ?ÜåÜñ?ÜúáÇ??"
+elseif w== "ÍİáÔ"  then
+return  "ÇİáÔ ÑÇÓß ??"
+elseif w=="äÇíãíä" then
+return  "äí ÓåÑÇä ÇÍÑÓßÜã????'"
+elseif w=="Çßæ ÇÍÏ" then
+return  "íí Úíäí ÇäÜí ãæÌÜæÏ????"
+elseif w=="Ôßæ" then
+return  "ßáÔí æßáÇÔí??ÊÜæá ÚÈÇáß ÇÍäÜÉ ÈÇáÔæÑÌÜÉ??"
+elseif w=="ÇäÊÉ ãäæ" then
+return  "Âäí ßÜÇãá ãİíÏ ÇßÈÑ Òäíä ÃÚÏÉ ÚÇáÍÏíÜÏ??"
+elseif w=="ßáÎÑÇ" then
+return  "ÎÑÇ áíÊÑÓ Íáßß/Ì íÇÎÑÇ íÇÈäáÎÑÇ ÎÎÊİæææ ÇÈáÚ??????"
+elseif w== "ÍÈíÈÊí"  then
+return  "ãäæ åÇí ?? ÊÎæäí ???"
+elseif w== "ÍÑæÍ ÇÓÈÍ"  then
+return  "æÇÎíÑÇğ ??"
+elseif w== "??"  then
+return  "áíÔ ÇáÍáæ ÖÇíÌ ????"
+elseif w== "??"  then
+return  "áÖæÌ ÍÈíÈí ??????"
+elseif w== "ÌæÚÇä"  then
+return  "ÊÚÇá Çßáäí ????"
+elseif w== "ÊÚÇá ÎÇÕ" or w== "ÎÇÕß" or w=="Ôæİ ÇáÎÇÕ" or w=="Ôæİ ÎÇÕ" then
+return  "åÇ ÔÓæä ??"
+elseif w== "áÊÍÌí"  then
+return  "æÇäÊ ÔÚáíß ÍÇÌí ãä Íá??"
+elseif w== "ãÚáíß" or w== "ÔÚáíß" then
+return  "Úáíå æäÕ ??"
+elseif w== "ÔÏÓæä" or w== "ÔÏÇÊÓææä" or w== "ÔÏÊÓæä" then
+return  "äØÈÎ ??"
+elseif w== _config.botname.." Ôáæäß"  then
+return "ÇÍÓÜÜä ãÜÜä ÇäÊåÜÜÜÜÀ ÔÜÜáæäÜÜÜß ÔÜÜÎÜÜÈÜÇÑß íÜÜÜæá ã?ÜÜÜÜÔÊÜÜÜÇŞÜÜÜáß ÔÜÜæ ãÇßÜÜÜæ ????"
+elseif w== "íæãå İÏæå"  then
+return  "İÏÄå ÇáÌ ÍíÇÊí ????"
+elseif w== "ÇİáÔ"  then
+return  "ÈÇäÏ ÚÇã ãä 30 ÈæÊ ??"
+elseif w== "ÇÍÈÌ"  then
+return  "íÎí ÇÍÊÑã ÔÚæÑí ??"
+elseif w== "Ôßæ ãÇßæ"  then
+return  "ÛíÑß/Ì Èá ßáÈ ãÇßæ íÈÚÏ ßáÈí?????"
+elseif w== "ÇÛíÑ Ìæ"  then
+return  "?? ÊÛíÑ Ìæ áæ ÊÓÍİ ?? Úá ÈäÇÊ"
+elseif w== "??"  then
+return  "ØÈÈ áÓÇäß Ìæå ÚíÈ ??"
+elseif w== "??"  then 
+return  "ÇÈÑÏ  ??"  
+elseif w== "ãÑÍÈÇ"  then
+return  "ãÑÇÍÈ ???? äæÑÊ-í ??"
+elseif w== "ÓáÇã" or w== "ÇáÓáÇã Úáíßã" or w== "ÓáÇã Úáíßã" or w=="ÓáÇãä Úáíßã" or w=="ÇáÓáÇãä Úáíßã" then
+return  "æÚáíßã ÇáÓáÇã ÇÛÇÊí????" 
+elseif w== "æÇßİ"  then
+return  "íÎí ãÇÈíå Ôí áíÔ ÊÊİÇæá??" 
+elseif w== "????"  then
+return  "áõÜÀÜÖ? ÊÊÜãÔÜ? Ç?ÚÜÏ ÓÜ??Üİ ??????"
+elseif w== "ÇáÈæÊ æÇßİ"  then
+return  "åíÇÊäí ??"
+elseif w == "ÖÇíÌ"  then 
+return  "áíÔ ÖÇíÌ ÍíÇÊí"
+elseif w== "ÖÇíÌå"  then
+return  "ãäæ ãÖæÌÌ ßÈÏÇíÊí"
+elseif w== "??" or w== "????" or w== "??????" then
+--return  "åÇ ÈÓ áÇ ÔİÊ ÎÇáÊß ÇáÔßÑå ??????"
+elseif w== "ÕÏß"  then
+return  "ŞÇÈá ÇÌĞÈ Úáíß!¿ ??"
+elseif w== "ÔÛÇá"  then
+return  "äÚã ÚÒíÒí ÈÇŞí æÇÊãÏÏ ????"
+elseif w== "ÊÎáíäí"  then
+return  "ÇÎáíß ÈÒÇæíå 380 ÏÑÌå æÇäÊå ÊÚÑİ ÇáÈÇŞí ??"
+elseif w== "İÏíÊß" or w== "İÏíÊäß"  then
+return  "İÏÇßÜ/ ËæáÇä ÇáÚÇáÜã????" 
+elseif w== "ÈæÊ"  then
+return  " ÃÓãí ".._config.botname.." ????"
+elseif w== "ãÓÇÚÏÉ"  then
+return  "áÚÑÖ ŞÇÆãÉ ÇáãÓÇÚÏÉ ÇßÊÈ ÇáÇæÇãÑ ????"
+elseif w== "ÒÇÍİ"  then
+return  "ÒÇÍİ Úáå ÎÇáÊß ÇáÔßÑå ??"
+elseif w== "Íáæ"  then
+return  "ÇäÊ ÇáÇÍáì ????"
+elseif w== "ÊÈÇÏá"  then
+return  "ßÇİí ãáíäå ÊÈÇÏá ????"
+elseif w== "ÚÇÔ"  then
+return  "ÇáÍáæ ????"
+elseif w== "ãÇÊ"  then
+return  "ÃÈæ ÇáÍãÇãÇÊ ????"
+elseif w== "æÑÏå" or w== "æÑÏÉ"  then
+return  "ÃäÊ/í  ÚØÑåÇ ????"
+elseif w== "ÔÓãß"  then
+return  "ãßÊæÈ İæß ????"
+elseif w== "İÏíÊ" or w=="İØíÊ" then
+return  "İÏÇß/Ì ????"
+elseif w== "æÇæ"  then
+return  "Şãíá ????"
+elseif w== "ÒÇÍİå" or w== "ÒÇÍİÉ"  then
+return  "áæ ÒÇÍİÊáß ÌÇä ãÇßáÊ ÒÇÍİå ????"
+elseif w== "ÍÈíÈÊí"  then
+return  "ÊÍÈß æÊÍÈ Úáíß ????"
+elseif w== "ÍíÇÊí"  then
+return  "åÇ ÍíÇÊí ????"
+elseif w== "ÚãÑí"  then
+return  "ÎáÕÊå ÏíÇÍå æÒÍİ ???? "
+elseif w== "ÇÓßÊ"  then
+return  "æß ãÚáã ????"
+elseif w== "ÈÊÍÈäí"  then
+return  "ÈÍÈß ÇÏ Çáßæä ????"
+elseif w== "ÇáãÚÒæİå" or w=="ÇáãÚÒæİÉ" or w=="ãÚÒæİå" then
+return  "ØÑØÇÇ ØÑØÇÇ ØÑØÇÇ ????"
+elseif w== "ãæÌæÏ"  then
+return  "ÊİÖá ÚÒíÒí ????"
+elseif w== "Çßáß"  then
+return  ".ßæá ÍíÇÊí ????"
+elseif w== "İÏæå" or w=="İÏæÉ" or w=="İØæå" or w=="İØæÉ" then      
+return  "áßáÈß/Ì ????"
+elseif w== "Ïí"  then
+return  "Îáíäí ÇÍÀ??ÈÀ????ÀÀ???? ??  ????"
+elseif w== "ÇÔßÑß"  then
+return  "ÈÎÏãÊß/Ì ÍÈí ?"
+elseif w== "??"  then
+return  "????"
+elseif w== "ÇŞÑÇáí ÏÚÇÁ"  then
+return "Çááåã ÚĞÈ ÇáãÏÑÓíä ?? ãäåã ÇáÇÍíÇÁ æÇáÇãæÇÊ ???? Çááåã ÚĞÈ Çã ÇáÇäßáíÒí ???? æßåÑÈåÇ ÈáÊíÇÑ ÇáÑÆíÓí ?? Çááåã ÚĞÈ Çã ÇáÑíÇÖíÇÊ æÍæáåÇ Çáì ÛÓÇáå ÈØÇäíÇÊ ?? Çááåã ÚĞÈ Çã ÇáÇÓáÇãíå æÇÌÚáåÇ ÈÇÆÚÉ ÇáÔÇãíå ???? Çááåã ÚĞÈ Çã ÇáÚÑÈí æÍæáåÇ Çáì ÈÇÆÚå ÇáÈáÈí Çááåã ÚĞÈ Çã ÇáÌÛÑÇİíå æÇÌÚáåÇ ßáÏÌÇÌå ÇáÍÇİíÉ Çááåã ÚĞÈ Çã ÇáÊÇÑíÎ æÒÍáŞåÇ ÈŞÔÑå ãä ÇáÈØíÎ æÇÑÓáåÇ Çáì ÇáãÑíÎ Çááåã ÚĞÈ Çã ÇáÇÍíÇÁ æÇÌÚáåÇ ßá ãæãíÇÁ Çááåã ÚĞÈ ÇáãÚÇæä ÇŞÊáå ÈáãÏÑÓå ÈåÇæä ??????"
+elseif edited_message and settings.lock_edit =="no" and not is_owner(msg) then
+return "ÓÍß æÚÏá ?????"
+-------------- ÕæÊíÇÊ
+elseif w==_config.botname and ww == "ÚİØ" and r3 and msg.reply_id and is_sudo(msg) then
+if msg.reply_id then
+sendVoice(msg.to.id, 'data/zeg.ogg', msg.reply_id, '???ÇÓãÚ ÇáÒíÌ  ÇÓãÚ ??')
+end
+
+---------------------------------------------
+elseif w == "ÇäÌÈ" or w == "äÌÈ" or w=="ÌÈ" then
+if is_sudo(msg) then 
+return   "ÍÇÖÑ ÊÇÌ ÑÇÓí ÇäÌÈíÊ ?? "
+elseif is_owner(msg) then
+return   "áÎÇØÑß ÑÇÍ ÇÓßÊ áÇä ãÏíÑ æÚ ÑÇÓí  ??"
+elseif is_mod(msg) then
+return   "İæß ãÇãÕÚÏß ÇÏãä ¿¿ ÇäÊå ÇäÌÈ ??"
+else
+return   "ÇäÌÈ ÇäÊå áÇÊäÏİÑ ??"
+end
+elseif  data[tostring(msg.to.id)]['replay'] and data[tostring(msg.to.id)]['replay'][w] then
+return  data[tostring(msg.to.id)]['replay'][w] 
+
+end
+end 
+else
+return
+end
+---------------------------------------------
+    
+---------------------------------------------
+
+end
+return {
+patterns = {
+"^(.*) (ÚİØ)(.*)$", 
+"^(.*) (ÑÒáå)(.*)$", 
+"^(ÊÍÈ) (.*)$",
+"^(ßáå) (.*)$",
+"^(ßæá) (.*)$",
+"^(ÈæÓ) (.*)$", 
+"^(ÑÏ) (ÇÖİ) ([^%s]+) (.+)$",
+"^(ÑÏ) (ãÓÍ Çáßá)$",
+"^(ÑÏ) (ãÓÍ) (.*)$",
+"(.*)" 
+},
+run = run,
+}
