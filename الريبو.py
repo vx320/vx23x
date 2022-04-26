@@ -30,7 +30,7 @@ async def restart(client, m: Message):
     await loli.edit("7")
     await loli.edit("8")
     await loli.edit("9")
-    await loli.edit("**✅ تم اعاده تشغيل موسيقى سورس جيبثون")
+    await loli.edit("** تم اعاده تشغيل موسيقى سورس توفي")
     os.execl(sys.executable, sys.executable, *sys.argv)
     quit()
 @Client.on_message(filters.command(["الاوامر"], prefixes=f"{HNDLR}"))
@@ -69,7 +69,7 @@ async def repo(client, m: Message):
     REPO = f"""
 <b>👋  اهلا {m.from_user.mention}!
 
-🎶 هذا ميوزك {OWNER_NAME} @{CHANNEL}
+🎶  هذا ميوزك توفي {OWNER_NAME} @{CHANNEL}
 
 """
     await m.reply(REPO, disable_web_page_preview=True)
